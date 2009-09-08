@@ -11,10 +11,9 @@ $SIG{PIPE} = sub {};
 test_tcp(
     server => sub {
         my $port = shift;
-        print STDERR "starting server on port $port\n";
         start_server(
             port => $port,
-            argv => [ qw(t/01-starter-echod.pl) ],
+            exec => [ qw(t/01-starter-echod.pl) ],
         );
     },
     client => sub {

@@ -22,9 +22,9 @@ sub start_server {
         unless ref $ports eq 'ARRAY';
     croak "``port'' should specify at least one port to listen to\n"
         unless @$ports;
-    my $argv = $opts->{argv} || undef;
-    croak "mandatory option ``argv'' is missing or is not an arrayref\n"
-        unless ref $argv eq 'ARRAY';
+    my $exec = $opts->{exec} || undef;
+    croak "mandatory option ``exec'' is missing or is not an arrayref\n"
+        unless ref $exec eq 'ARRAY';
     
     # start listening, setup envvar
     my @sock;
@@ -64,7 +64,7 @@ sub start_server {
     $SIG{PIPE} = 'IGNORE';
     
     # the main loop
-    my $current_worker = _start_worker($argv);
+    my $current_worker = _start_worker($exec);
     my %old_workers;
     while (1) {
         my @r = wait3(1);
@@ -72,7 +72,7 @@ sub start_server {
             my ($died_worker, $status) = @r;
             if ($died_worker == $current_worker) {
                 print STDERR "worker process $died_worker died unexpectedly with status:$status, restarting\n";
-                $current_worker = _start_worker($argv);
+                $current_worker = _start_worker($exec);
             } else {
                 print STDERR "old worker process $died_worker died,"
                     . " status:$status\n";
@@ -84,7 +84,7 @@ sub start_server {
             if ($signal_received eq 'HUP' || $signal_received eq 'USR1') {
                 print STDERR "received HUP (or USR1), spawning a new worker\n";
                 $old_workers{$current_worker} = 1;
-                $current_worker = _start_worker($argv);
+                $current_worker = _start_worker($exec);
             } elsif ($signal_received eq 'USR2') {
                 print STDERR "received USR2 indicating that the new worker is ready, sending TERM to old workers:";
                 if (%old_workers) {
@@ -129,14 +129,14 @@ sub server_ports {
 }
 
 sub _start_worker {
-    my $argv = shift;
+    my $exec = shift;
     my $pid = fork;
     die "fork(2) failed:$!"
         unless defined $pid;
     if ($pid == 0) {
         # child process
-        { exec(@$argv) };
-        print STDERR "failed to exec  $argv->[0]:$!";
+        { exec(@$exec) };
+        print STDERR "failed to exec $exec->[0]:$!";
         exit(255);
     }
     print STDERR "starting new worker process, pid:$pid\n";
