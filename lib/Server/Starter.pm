@@ -3,8 +3,9 @@ package Server::Starter;
 use strict;
 use warnings;
 use Carp;
+use Fcntl;
 use IO::Socket::INET;
-use POSIX qw(dup);
+use POSIX qw();
 use Proc::Wait3;
 
 use Exporter qw(import);
@@ -12,25 +13,27 @@ use Exporter qw(import);
 our @EXPORT_OK = qw(start_server server_ports);
 
 sub start_server {
-    my $opts = shift;
+    my $opts = @_ == 1 ? shift : { @_ };
     
     # prepare args
     my $ports = $opts->{port}
         or croak "mandatory option ``port'' is missing\n";
     $ports = [ $ports ]
         unless ref $ports eq 'ARRAY';
-    croak "``port'' should specify at least one port to listen to\n";
+    croak "``port'' should specify at least one port to listen to\n"
+        unless @$ports;
     my $argv = $opts->{argv} || undef;
     croak "mandatory option ``argv'' is missing or is not an arrayref\n"
         unless ref $argv eq 'ARRAY';
     
     # start listening, setup envvar
+    my @sock;
     my @sockenv;
     for my $port (@$ports) {
         my $sock;
         if ($port =~ /^\s*(\d+)\s*$/) {
-            $port = $1;
             $sock = IO::Socket::INET->new(
+                Listen    => Socket::SOMAXCONN(),
                 LocalPort => $port,
                 Proto     => 'tcp',
                 ReuseAddr => 1,
@@ -38,6 +41,7 @@ sub start_server {
         } elsif ($port =~ /^\s*(.*)\s*:\s*(\d+)\s*$/) {
             $port = "$1:$2";
             $sock = IO::Socket::INET->new(
+                Listen    => Socket::SOMAXCONN(),
                 LocalAddr => $port,
                 Proto     => 'tcp',
                 ReuseAddr => 1,
@@ -45,14 +49,15 @@ sub start_server {
         } else {
             croak "invalid ``port'' value:$port\n"
         }
-        my $fd = dup($sock->fileno)
-            or die "dup(2) failed:$!";
-        push @sockenv, "$port=$fd";
+        fcntl($sock, F_SETFD, my $flags = '')
+                or die "fcntl(F_SETFD, 0) failed:$!";
+        push @sockenv, "$port=" . $sock->fileno;
+        push @sock, $sock;
     }
     $ENV{SERVER_STARTER_PORT} = join ";", @sockenv;
     
     # setup signal handlers
-    my $signal_received;
+    my $signal_received = '';
     $SIG{TERM} = $SIG{HUP} = $SIG{USR1} = $SIG{USR2} = sub {
         $signal_received = $_[0];
     };
@@ -60,38 +65,40 @@ sub start_server {
     # the main loop
     my $current_worker = _start_worker($argv);
     my %old_workers;
-    while ($signal_received != 'TERM') {
+    while ($signal_received ne 'TERM') {
         my @r = wait3(1);
         if (@r) {
             my ($died_worker, $status) = @r;
             if ($died_worker == $current_worker) {
-                print "worker process $died_worker died unexpectedly with",
-                    "status:$status, restarting\n";
+                print STDERR "worker process $died_worker died unexpectedly"
+                    . " with status:$status, restarting\n";
                 $current_worker = _start_worker($argv);
             } else {
-                print "old worker process $died_worker died, status:$status\n";
-                undef $old_workers{$died_worker};
+                print STDERR "old worker process $died_worker died,"
+                    . " status:$status\n";
+                delete $old_workers{$died_worker};
             }
         }
-        if ($signal_received == 'HUP' || $signal_received == 'USR1') {
-            undef $signal_received;
-            print "received HUP (or USR1), spawning a new worker\n";
+        if ($signal_received eq 'HUP' || $signal_received eq 'USR1') {
+            $signal_received = '';
+            print STDERR "received HUP (or USR1), spawning a new worker\n";
             $old_workers{$current_worker} = 1;
             $current_worker = _start_worker($argv);
-        } elsif ($signal_received == 'USR2') {
-            undef $signal_received;
+        } elsif ($signal_received eq 'USR2') {
+            $signal_received = '';
             if (%old_workers) {
-                print "received USR2 indicating that the new worker is ready\n",
+                print STDERR "received USR2 indicating that the new worker is"
+                    . " ready\n",
                     "sending TERM to old workers:";
                 if (%old_workers) {
                     print join(',', sort keys %old_workers), "\n";
                 } else {
-                    print "no workers\n";
+                    print STDERR "no workers\n";
                 }
                 kill 'TERM', $_
                     for sort keys %old_workers;
             } else {
-                print "received USR2\n";
+                print STDERR "received USR2\n";
             }
         }
     }
@@ -99,19 +106,19 @@ sub start_server {
     # cleanup
     $old_workers{$current_worker} = 1;
     undef $current_worker;
-    print "received TERM, sending TERM to all workers:",
+    print STDERR "received TERM, sending TERM to all workers:",
         join(',', sort keys %old_workers), "\n";
     kill 'TERM', $_
         for sort keys %old_workers;
     while (%old_workers) {
         if (my @r = wait3(1)) {
             my ($died_worker, $status) = @r;
-            print "worker process $died_worker died, status:$status\n";
-            undef $old_workers{$died_worker};
+            print STDERR "worker process $died_worker died, status:$status\n";
+            delete $old_workers{$died_worker};
         }
     }
     
-    print "exitting\n";
+    print STDERR "exitting\n";
 }
 
 sub server_ports {
@@ -133,10 +140,10 @@ sub _start_worker {
     if ($pid == 0) {
         # child process
         { exec(@$argv) };
-        print "failed to exec  $argv->[0]:$!";
+        print STDERR "failed to exec  $argv->[0]:$!";
         exit(255);
     }
-    print "started new worker process (pid=$pid)\n";
+    print STDERR "started new worker process (pid=$pid)\n";
     sleep 1;
     $pid;
 }
