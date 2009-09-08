@@ -57,21 +57,21 @@ sub start_server {
     $ENV{SERVER_STARTER_PORT} = join ";", @sockenv;
     
     # setup signal handlers
-    my $signal_received = '';
-    $SIG{TERM} = $SIG{HUP} = $SIG{USR1} = $SIG{USR2} = sub {
-        $signal_received = $_[0];
-    };
+    my @signals_received;
+    $SIG{$_} = sub {
+        push @signals_received, $_[0];
+    } for (qw/INT TERM HUP USR1 USR2/);
+    $SIG{PIPE} = 'IGNORE';
     
     # the main loop
     my $current_worker = _start_worker($argv);
     my %old_workers;
-    while ($signal_received ne 'TERM') {
+    while (1) {
         my @r = wait3(1);
         if (@r) {
             my ($died_worker, $status) = @r;
             if ($died_worker == $current_worker) {
-                print STDERR "worker process $died_worker died unexpectedly"
-                    . " with status:$status, restarting\n";
+                print STDERR "worker process $died_worker died unexpectedly with status:$status, restarting\n";
                 $current_worker = _start_worker($argv);
             } else {
                 print STDERR "old worker process $died_worker died,"
@@ -79,34 +79,32 @@ sub start_server {
                 delete $old_workers{$died_worker};
             }
         }
-        if ($signal_received eq 'HUP' || $signal_received eq 'USR1') {
-            $signal_received = '';
-            print STDERR "received HUP (or USR1), spawning a new worker\n";
-            $old_workers{$current_worker} = 1;
-            $current_worker = _start_worker($argv);
-        } elsif ($signal_received eq 'USR2') {
-            $signal_received = '';
-            if (%old_workers) {
-                print STDERR "received USR2 indicating that the new worker is"
-                    . " ready\n",
-                    "sending TERM to old workers:";
+        while (@signals_received) {
+            my $signal_received = pop @signals_received;
+            if ($signal_received eq 'HUP' || $signal_received eq 'USR1') {
+                print STDERR "received HUP (or USR1), spawning a new worker\n";
+                $old_workers{$current_worker} = 1;
+                $current_worker = _start_worker($argv);
+            } elsif ($signal_received eq 'USR2') {
+                print STDERR "received USR2 indicating that the new worker is ready, sending TERM to old workers:";
                 if (%old_workers) {
                     print join(',', sort keys %old_workers), "\n";
                 } else {
-                    print STDERR "no workers\n";
+                    print STDERR "none\n";
                 }
                 kill 'TERM', $_
                     for sort keys %old_workers;
             } else {
-                print STDERR "received USR2\n";
+                goto CLEANUP;
             }
         }
     }
     
+ CLEANUP:
     # cleanup
     $old_workers{$current_worker} = 1;
     undef $current_worker;
-    print STDERR "received TERM, sending TERM to all workers:",
+    print STDERR "received $signals_received[0], sending TERM to all workers:",
         join(',', sort keys %old_workers), "\n";
     kill 'TERM', $_
         for sort keys %old_workers;
@@ -122,10 +120,8 @@ sub start_server {
 }
 
 sub server_ports {
-    die(
-        "no environment variable SERVER_STARTER_PORT. Did you start the process"
-            . " using server_starter?",
-    ) unless $ENV{SERVER_STARTER_PORT};
+    die "no environment variable SERVER_STARTER_PORT. Did you start the process using server_starter?",
+        unless $ENV{SERVER_STARTER_PORT};
     my %ports = map {
         +(split /=/, $_, 2)
     } split /;/, $ENV{SERVER_STARTER_PORT};
@@ -143,7 +139,7 @@ sub _start_worker {
         print STDERR "failed to exec  $argv->[0]:$!";
         exit(255);
     }
-    print STDERR "started new worker process (pid=$pid)\n";
+    print STDERR "starting new worker process, pid:$pid\n";
     sleep 1;
     $pid;
 }
