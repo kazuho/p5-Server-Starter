@@ -18,9 +18,6 @@ my $listener = IO::Socket::INET->new(
 $listener->fdopen((values %{server_ports()})[0], 'w')
     or die "failed to bind listening socket:$!";
 
-# intentionally not send USR2, sent by the test script
-# kill 'USR2', getppid();
-
 while (1) {
     if (my $conn = $listener->accept) {
         my $buf;

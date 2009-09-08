@@ -60,7 +60,7 @@ sub start_server {
     my @signals_received;
     $SIG{$_} = sub {
         push @signals_received, $_[0];
-    } for (qw/INT TERM HUP USR1 USR2/);
+    } for (qw/INT TERM HUP/);
     $SIG{PIPE} = 'IGNORE';
     
     # the main loop
@@ -79,14 +79,12 @@ sub start_server {
                 delete $old_workers{$died_worker};
             }
         }
-        while (@signals_received) {
-            my $signal_received = pop @signals_received;
-            if ($signal_received eq 'HUP' || $signal_received eq 'USR1') {
-                print STDERR "received HUP (or USR1), spawning a new worker\n";
+        for (; @signals_received; shift @signals_received) {
+            if ($signals_received[0] eq 'HUP') {
+                print STDERR "received HUP, spawning a new worker\n";
                 $old_workers{$current_worker} = 1;
                 $current_worker = _start_worker($exec);
-            } elsif ($signal_received eq 'USR2') {
-                print STDERR "received USR2 indicating that the new worker is ready, sending TERM to old workers:";
+                print STDERR "sending TERM to old workers:";
                 if (%old_workers) {
                     print join(',', sort keys %old_workers), "\n";
                 } else {

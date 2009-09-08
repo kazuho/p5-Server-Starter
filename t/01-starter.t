@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 use Test::TCP;
-use Test::More tests => 12;
+use Test::More tests => 9;
 
 use Server::Starter qw(start_server);
 
@@ -18,10 +18,6 @@ test_tcp(
     },
     client => sub {
         my ($port, $server_pid) = @_;
-        # send USR2 to server to indicate that the worker is ready
-        sleep 1;
-        kill 'USR2', $server_pid;
-        sleep 1;
         my $buf;
         my $sock = IO::Socket::INET->new(
             PeerAddr => "127.0.0.1:$port",
@@ -34,14 +30,9 @@ test_tcp(
         like($buf, qr/^\d+:hello$/, 'read');
         $buf =~ /^(\d+):/;
         my $worker_pid = $1;
-        # start switching to next gen
-        kill 'USR1', $server_pid;
-        is($sock->syswrite("hello"), 5, 'write after starting to swtich');
-        ok($sock->sysread($buf, 1048576), 'read after starting to switch');
-        is($buf, "$worker_pid:hello", 'read after starting to switch');
-        # and finally switch
-        kill 'USR2', $server_pid;
-        sleep 1;
+        # switch to next gen
+        kill 'HUP', $server_pid;
+        sleep 5;
         $sock = IO::Socket::INET->new(
             PeerAddr => "127.0.0.1:$port",
             Proto    => 'tcp',

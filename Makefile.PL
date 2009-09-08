@@ -7,6 +7,7 @@ abstract_from('lib/Server/Starter.pm');
 license('perl');
 
 requires('Getopt::Long');
+test_requires('Test::TCP', 0.05);
 
 auto_include;
 auto_install;
