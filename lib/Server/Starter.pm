@@ -118,7 +118,7 @@ sub server_ports {
     die(
         "no environment variable SERVER_STARTER_PORT. Did you start the process"
             . " using server_starter?",
-    ) unless $ENV{SERVER_STARTER_PORT}
+    ) unless $ENV{SERVER_STARTER_PORT};
     my %ports = map {
         +(split /=/, $_, 2)
     } split /;/, $ENV{SERVER_STARTER_PORT};
