@@ -47,9 +47,9 @@ sub start_server {
         }
         my $fd = dup($sock->fileno)
             or die "dup(2) failed:$!";
-        push @sockenv, "$fd=$port";
+        push @sockenv, "$port=$fd";
     }
-    $ENV{SERVER_STARTER} = join ";", @sockenv;
+    $ENV{SERVER_STARTER_PORT} = join ";", @sockenv;
     
     # setup signal handlers
     my $signal_received;
