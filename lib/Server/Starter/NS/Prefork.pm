@@ -5,6 +5,7 @@ use warnings;
 
 use Net::Server::PreFork;
 use Net::Server::Proto::TCP;
+use Server::Starter qw(server_ports);
 
 use base qw(Net::Server::PreFork);
 
@@ -12,14 +13,7 @@ sub pre_bind {
     my $self = shift;
     my $prop = $self->{server};
     
-    $self->fatal(
-        "no environment variable SERVER_STARTER_PORT. Did you start the process"
-            . " using server_starter?",
-    ) unless $ENV{SERVER_STARTER_PORT};
-    my %ports = map {
-        +(split /=/, $_, 2)
-    } split /;/, $ENV{SERVER_STARTER_PORT};
-    
+    my %ports = %{server_ports()};
     for my $port (sort keys %ports) {
         my $sock = Net::Server::Proto::TCP->new();
         if ($port =~ /^(.*):(.*?)$/) {

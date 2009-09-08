@@ -9,7 +9,7 @@ use Proc::Wait3;
 
 use Exporter qw(import);
 
-our @EXPORT_OK = qw(start_server);
+our @EXPORT_OK = qw(start_server server_ports);
 
 sub start_server {
     my $opts = shift;
@@ -112,6 +112,17 @@ sub start_server {
     }
     
     print "exitting\n";
+}
+
+sub server_ports {
+    die(
+        "no environment variable SERVER_STARTER_PORT. Did you start the process"
+            . " using server_starter?",
+    ) unless $ENV{SERVER_STARTER_PORT}
+    my %ports = map {
+        +(split /=/, $_, 2)
+    } split /;/, $ENV{SERVER_STARTER_PORT};
+    \%ports;
 }
 
 sub _start_worker {
