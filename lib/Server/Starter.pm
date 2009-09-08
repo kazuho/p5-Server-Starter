@@ -5,7 +5,7 @@ use warnings;
 use Carp;
 use Fcntl;
 use IO::Socket::INET;
-use POSIX qw();
+use POSIX qw(:sys_wait_h);
 use Proc::Wait3;
 
 use Exporter qw(import);
@@ -86,7 +86,7 @@ sub start_server {
                 $current_worker = _start_worker($exec);
                 print STDERR "sending TERM to old workers:";
                 if (%old_workers) {
-                    print join(',', sort keys %old_workers), "\n";
+                    print STDERR join(',', sort keys %old_workers), "\n";
                 } else {
                     print STDERR "none\n";
                 }
@@ -128,17 +128,24 @@ sub server_ports {
 
 sub _start_worker {
     my $exec = shift;
-    my $pid = fork;
-    die "fork(2) failed:$!"
-        unless defined $pid;
-    if ($pid == 0) {
-        # child process
-        { exec(@$exec) };
-        print STDERR "failed to exec $exec->[0]:$!";
-        exit(255);
+    my $pid;
+    while (1) {
+        $pid = fork;
+        die "fork(2) failed:$!"
+            unless defined $pid;
+        if ($pid == 0) {
+            # child process
+            { exec(@$exec) };
+            print STDERR "failed to exec $exec->[0]:$!";
+            exit(255);
+        }
+        print STDERR "starting new worker process, pid:$pid\n";
+        sleep 1;
+        if (waitpid($pid, WNOHANG) <= 0) {
+            last;
+        }
+        print STDERR "new worker process seems to have failed to start, exit status:$?\n";
     }
-    print STDERR "starting new worker process, pid:$pid\n";
-    sleep 1;
     $pid;
 }
 

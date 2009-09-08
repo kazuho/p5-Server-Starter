@@ -7,6 +7,9 @@ abstract_from('lib/Server/Starter.pm');
 license('perl');
 
 requires('Getopt::Long');
+requires('Net::Server');
+requires('Proc::Wait3');
+test_requires('LWP::Simple');
 test_requires('Test::TCP', 0.04);
 
 auto_include;
