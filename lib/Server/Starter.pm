@@ -14,6 +14,7 @@ our @EXPORT_OK = qw(start_server server_ports);
 
 sub start_server {
     my $opts = @_ == 1 ? shift : { @_ };
+    $opts->{interval} ||= 1;
     
     # prepare args
     my $ports = $opts->{port}
@@ -22,9 +23,8 @@ sub start_server {
         unless ref $ports eq 'ARRAY';
     croak "``port'' should specify at least one port to listen to\n"
         unless @$ports;
-    my $exec = $opts->{exec} || undef;
     croak "mandatory option ``exec'' is missing or is not an arrayref\n"
-        unless ref $exec eq 'ARRAY';
+        unless $opts->{exec} && ref $opts->{exec} eq 'ARRAY';
     
     # start listening, setup envvar
     my @sock;
@@ -64,7 +64,7 @@ sub start_server {
     $SIG{PIPE} = 'IGNORE';
     
     # the main loop
-    my $current_worker = _start_worker($exec);
+    my $current_worker = _start_worker($opts);
     my %old_workers;
     while (1) {
         my @r = wait3(1);
@@ -72,7 +72,7 @@ sub start_server {
             my ($died_worker, $status) = @r;
             if ($died_worker == $current_worker) {
                 print STDERR "worker process $died_worker died unexpectedly with status:$status, restarting\n";
-                $current_worker = _start_worker($exec);
+                $current_worker = _start_worker($opts);
             } else {
                 print STDERR "old worker process $died_worker died,"
                     . " status:$status\n";
@@ -83,7 +83,7 @@ sub start_server {
             if ($signals_received[0] eq 'HUP') {
                 print STDERR "received HUP, spawning a new worker\n";
                 $old_workers{$current_worker} = 1;
-                $current_worker = _start_worker($exec);
+                $current_worker = _start_worker($opts);
                 print STDERR "sending TERM to old workers:";
                 if (%old_workers) {
                     print STDERR join(',', sort keys %old_workers), "\n";
@@ -127,7 +127,7 @@ sub server_ports {
 }
 
 sub _start_worker {
-    my $exec = shift;
+    my $opts = shift;
     my $pid;
     while (1) {
         $pid = fork;
@@ -135,12 +135,12 @@ sub _start_worker {
             unless defined $pid;
         if ($pid == 0) {
             # child process
-            { exec(@$exec) };
-            print STDERR "failed to exec $exec->[0]:$!";
+            { exec(@{$opts->{exec}}) };
+            print STDERR "failed to exec $opts->{exec}->[0]:$!";
             exit(255);
         }
         print STDERR "starting new worker process, pid:$pid\n";
-        sleep 1;
+        sleep $opts->{interval};
         if (waitpid($pid, WNOHANG) <= 0) {
             last;
         }
