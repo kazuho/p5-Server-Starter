@@ -11,7 +11,7 @@ test_tcp(
         my $port = shift;
         start_server(
             port     => $port,
-            exec     => [ qw(t/03-startfail-server.pl) ],
+            exec     => [ qw(t/02-startfail-server.pl) ],
         );
     },
     client => sub {
