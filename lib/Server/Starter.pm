@@ -10,6 +10,7 @@ use Proc::Wait3;
 
 use Exporter qw(import);
 
+our $VERSION = 0.01;
 our @EXPORT_OK = qw(start_server server_ports);
 
 sub start_server {

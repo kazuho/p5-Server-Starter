@@ -1,0 +1,52 @@
+#! /usr/bin/perl
+
+use strict;
+use warnings;
+
+use Getopt::Long;
+use Server::Starter qw(start_server);
+
+sub usage {
+    print <<"EOT";
+Usage: $0 [options] server-prog server-arg1 server-arg2 ...
+
+Example:
+  start_server --port=80 -- my_server
+                           listen to port 80 and start my_server
+
+Options:
+  --port=(port|host:port)  TCP port to listen to (should be specified more
+                           than once)
+  --interval=seconds       minimum interval to respawn the server process
+                           (default: 1)
+
+EOT
+    exit 0;
+}
+
+my (@opt_port, $opt_interval, $opt_help, $opt_version);
+
+GetOptions(
+    'port=s'     => \@opt_port,
+    'interval=i' => \$opt_interval,
+    help         => \$opt_help,
+    version      => \$opt_version,
+) or exit 1;
+usage()
+    if $opt_help;
+if ($opt_version) {
+    print "$Server::Starter::VERSION\n";
+    exit 0;
+}
+
+# validate options
+die "mandatory option --port=port is missing\n"
+    unless @opt_port;
+die "server program not specified\n"
+    unless @ARGV;
+
+start_server(
+    exec => \@ARGV,
+    port => \@opt_port,
+    ($opt_interval ? (interval => $opt_interval) : ()),
+);
