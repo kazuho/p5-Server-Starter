@@ -50,3 +50,34 @@ start_server(
     port => \@opt_port,
     ($opt_interval ? (interval => $opt_interval) : ()),
 );
+
+__END__
+
+=head1 NAME
+
+start_server - a superdaemon for hot-deploying server programs
+
+=head1 SYNOPSIS
+
+  start_server [options] server-prog server-arg1 server-arg2 ...
+
+=head1 DESCRIPTION
+
+This script is a frontend of L<Server::Starter>.  For more information please refer to the documenation of the module.
+
+Use --help to find out how to use the script.
+
+=head1 AUTHOR
+
+Kazuho Oku E<lt>kazuhooku@gmail.comE<gt>
+Copyright (C) 2009 Cybozu Labs, Inc.
+
+=head1 SEE ALSO
+
+L<Server::Starter>
+
+=head1 LICENSE
+
+This library is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
+
+=cut
