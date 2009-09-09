@@ -50,6 +50,8 @@ sub start_server {
         } else {
             croak "invalid ``port'' value:$port\n"
         }
+        die "failed to listen to $port:$!"
+            unless $sock;
         fcntl($sock, F_SETFD, my $flags = '')
                 or die "fcntl(F_SETFD, 0) failed:$!";
         push @sockenv, "$port=" . $sock->fileno;
