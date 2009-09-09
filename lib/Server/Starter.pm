@@ -55,6 +55,7 @@ sub start_server {
         push @sock, $sock;
     }
     $ENV{SERVER_STARTER_PORT} = join ";", @sockenv;
+    $ENV{SERVER_STARTER_GENERATION} = 0;
     
     # setup signal handlers
     my @signals_received;
@@ -71,11 +72,10 @@ sub start_server {
         if (@r) {
             my ($died_worker, $status) = @r;
             if ($died_worker == $current_worker) {
-                print STDERR "worker process $died_worker died unexpectedly with status:$status, restarting\n";
+                print STDERR "worker $died_worker died unexpectedly with status:$status, restarting\n";
                 $current_worker = _start_worker($opts);
             } else {
-                print STDERR "old worker process $died_worker died,"
-                    . " status:$status\n";
+                print STDERR "old worker $died_worker died, status:$status\n";
                 delete $old_workers{$died_worker};
             }
         }
@@ -84,7 +84,7 @@ sub start_server {
                 print STDERR "received HUP, spawning a new worker\n";
                 $old_workers{$current_worker} = 1;
                 $current_worker = _start_worker($opts);
-                print STDERR "sending TERM to old workers:";
+                print STDERR "new worker is now running, sending TERM to old workers:";
                 if (%old_workers) {
                     print STDERR join(',', sort keys %old_workers), "\n";
                 } else {
@@ -109,7 +109,7 @@ sub start_server {
     while (%old_workers) {
         if (my @r = wait3(1)) {
             my ($died_worker, $status) = @r;
-            print STDERR "worker process $died_worker died, status:$status\n";
+            print STDERR "worker $died_worker died, status:$status\n";
             delete $old_workers{$died_worker};
         }
     }
@@ -130,6 +130,7 @@ sub _start_worker {
     my $opts = shift;
     my $pid;
     while (1) {
+        $ENV{SERVER_STARTER_GENERATION}++;
         $pid = fork;
         die "fork(2) failed:$!"
             unless defined $pid;
@@ -139,12 +140,12 @@ sub _start_worker {
             print STDERR "failed to exec $opts->{exec}->[0]:$!";
             exit(255);
         }
-        print STDERR "starting new worker process, pid:$pid\n";
+        print STDERR "starting new worker $pid\n";
         sleep $opts->{interval};
         if (waitpid($pid, WNOHANG) <= 0) {
             last;
         }
-        print STDERR "new worker process seems to have failed to start, exit status:$?\n";
+        print STDERR "new worker $pid seems to have failed to start, exit status:$?\n";
     }
     $pid;
 }
