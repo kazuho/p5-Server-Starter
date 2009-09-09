@@ -17,7 +17,7 @@ test_tcp(
     client => sub {
         my ($port, $server_pid) = @_;
         my $buf;
-        sleep 1;
+        sleep 3;
         {
             my $sock = IO::Socket::INET->new(
                 PeerAddr => "127.0.0.1:$port",
@@ -44,7 +44,7 @@ test_tcp(
             is($buf, 2, 'check generation');
         }
         # wait until server succeds in reboot
-        sleep 6;
+        sleep 5;
         {
             my $sock = IO::Socket::INET->new(
                 PeerAddr => "127.0.0.1:$port",
