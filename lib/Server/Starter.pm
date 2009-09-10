@@ -27,6 +27,8 @@ sub start_server {
     croak "mandatory option ``exec'' is missing or is not an arrayref\n"
         unless $opts->{exec} && ref $opts->{exec} eq 'ARRAY';
     
+    print STDERR "start_server (pid:$$) starting now...\n";
+    
     # start listening, setup envvar
     my @sock;
     my @sockenv;
