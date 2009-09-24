@@ -1,5 +1,6 @@
 package Server::Starter;
 
+use 5.008;
 use strict;
 use warnings;
 use Carp;
@@ -10,7 +11,7 @@ use Proc::Wait3;
 
 use Exporter qw(import);
 
-our $VERSION = 0.02;
+our $VERSION = '0.03';
 our @EXPORT_OK = qw(start_server server_ports);
 
 sub start_server {

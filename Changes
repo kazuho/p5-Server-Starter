@@ -1,5 +1,9 @@
 Revision history for Perl extension Server::Starter.
 
+0.03  Thu Sep 24 20:00:00 2009
+	- require 5.008
+	- require Test::TCP 0.11 to satisfy the dependencies
+
 0.02  Thu Sep 09 17:06:00 2009
 	- add README, Changes
 
