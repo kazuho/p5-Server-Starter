@@ -19,7 +19,7 @@ test_tcp(
     client => sub {
         my ($port, $server_pid) = @_;
         my $buf;
-        sleep 1;
+        #sleep 1;
         my $sock = IO::Socket::INET->new(
             PeerAddr => "127.0.0.1:$port",
             Proto    => 'tcp',

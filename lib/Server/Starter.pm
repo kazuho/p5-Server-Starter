@@ -11,7 +11,7 @@ use Proc::Wait3;
 
 use Exporter qw(import);
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 our @EXPORT_OK = qw(start_server server_ports);
 
 sub start_server {
@@ -74,7 +74,7 @@ sub start_server {
     my $current_worker = _start_worker($opts);
     my %old_workers;
     while (1) {
-        my @r = wait3(1);
+        my @r = wait3(! scalar @signals_received);
         if (@r) {
             my ($died_worker, $status) = @r;
             if ($died_worker == $current_worker) {
