@@ -1,5 +1,8 @@
 Revision history for Perl extension Server::Starter.
 
+0.05  Tue Oct 13 20:30:00 2009
+	- use $^X in tests (or tests will fail on hosts using a different installation of perl from one installed to /usr/bin/perl)
+
 0.04  Fri Oct 09 19:25:00 2009
 	- signals received just after spawning worker process were dismissed (thanks to kazeburo for reporting and helping fix the problem)
 

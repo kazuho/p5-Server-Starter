@@ -13,7 +13,7 @@ test_tcp(
         my $port = shift;
         start_server(
             port => $port,
-            exec => [ qw(t/01-starter-echod.pl) ],
+            exec => [ $^X, qw(t/01-starter-echod.pl) ],
         );
     },
     client => sub {
