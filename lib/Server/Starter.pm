@@ -11,8 +11,10 @@ use Proc::Wait3;
 
 use Exporter qw(import);
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 our @EXPORT_OK = qw(start_server server_ports);
+
+my @signals_received;
 
 sub start_server {
     my $opts = @_ == 1 ? shift : { @_ };
@@ -64,7 +66,6 @@ sub start_server {
     $ENV{SERVER_STARTER_GENERATION} = 0;
     
     # setup signal handlers
-    my @signals_received;
     $SIG{$_} = sub {
         push @signals_received, $_[0];
     } for (qw/INT TERM HUP/);
@@ -148,7 +149,8 @@ sub _start_worker {
         }
         print STDERR "starting new worker $pid\n";
         sleep $opts->{interval};
-        if (waitpid($pid, WNOHANG) <= 0) {
+        if ((grep { $_ ne 'HUP' } @signals_received)
+                || waitpid($pid, WNOHANG) <= 0) {
             last;
         }
         print STDERR "new worker $pid seems to have failed to start, exit status:$?\n";

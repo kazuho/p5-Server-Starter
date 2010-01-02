@@ -1,5 +1,8 @@
 Revision history for Perl extension Server::Starter.
 
+0.06  Sat Jan 02 10:26:00 2010
+	- bugfix: start_server did not shutdown upon receiving SIGINT while the worker is failing to start up
+
 0.05  Tue Oct 13 20:30:00 2009
 	- use $^X in tests (or tests will fail on hosts using a different installation of perl from one installed to /usr/bin/perl)
 
