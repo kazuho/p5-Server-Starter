@@ -187,7 +187,7 @@ Server::Starter - a superdaemon for hot-deploying server programs
 
 =head1 DESCRIPTION
 
-It is often a pain to write a server program that supports graceful restarts, with no resource leaks.  L<Server::Starter>, solves the problem by splitting the task into two.  One is L<start_server>, a script provided as a part of the module, which works as a superdaemon that binds to one or more TCP ports, and repeatedly spawns the server program that actually handles the incomming commenctions.  The spawned server programs under L<Server::Starter> call accept(2) and handle the requests.
+It is often a pain to write a server program that supports graceful restarts, with no resource leaks.  L<Server::Starter>, solves the problem by splitting the task into two.  One is L<start_server>, a script provided as a part of the module, which works as a superdaemon that binds to one or more TCP ports, and repeatedly spawns the server program that actually handles the incoming commenctions.  The spawned server programs under L<Server::Starter> call accept(2) and handle the requests.
 
 To gracefully restart the server program, send SIGHUP to the superdaemon.  The superdaemon spawns a new server program, and if (and only if) it starts up successfully, sends SIGTERM to the old server program.
 
