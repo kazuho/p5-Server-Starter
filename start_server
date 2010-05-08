@@ -14,9 +14,13 @@ Example:
   start_server --port=80 -- my_server
                            listen to port 80 and start my_server
 
+  start_server -- plackup -s FCGI --listen=/tmp/fcgi.sock ...
+                           start Plack using FCGI backend binding to a unix
+                           socket
+
 Options:
-  --port=(port|host:port)  TCP port to listen to (should be specified more
-                           than once)
+  --port=(port|host:port)  TCP port to listen to (if omitted, will not bind
+                           to any ports)
   --interval=seconds       minimum interval to respawn the server process
                            (default: 1)
 
@@ -40,8 +44,6 @@ if ($opt_version) {
 }
 
 # validate options
-die "mandatory option --port=port is missing\n"
-    unless @opt_port;
 die "server program not specified\n"
     unless @ARGV;
 

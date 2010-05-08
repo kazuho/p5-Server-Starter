@@ -11,7 +11,7 @@ use Proc::Wait3;
 
 use Exporter qw(import);
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 our @EXPORT_OK = qw(start_server server_ports);
 
 my @signals_received;
@@ -25,8 +25,6 @@ sub start_server {
         or croak "mandatory option ``port'' is missing\n";
     $ports = [ $ports ]
         unless ref $ports eq 'ARRAY';
-    croak "``port'' should specify at least one port to listen to\n"
-        unless @$ports;
     croak "mandatory option ``exec'' is missing or is not an arrayref\n"
         unless $opts->{exec} && ref $opts->{exec} eq 'ARRAY';
     
@@ -187,7 +185,9 @@ Server::Starter - a superdaemon for hot-deploying server programs
 
 =head1 DESCRIPTION
 
-It is often a pain to write a server program that supports graceful restarts, with no resource leaks.  L<Server::Starter>, solves the problem by splitting the task into two.  One is L<start_server>, a script provided as a part of the module, which works as a superdaemon that binds to one or more TCP ports, and repeatedly spawns the server program that actually handles the incoming commenctions.  The spawned server programs under L<Server::Starter> call accept(2) and handle the requests.
+It is often a pain to write a server program that supports graceful restarts, with no resource leaks.  L<Server::Starter>, solves the problem by splitting the task into two.  One is L<start_server>, a script provided as a part of the module, which works as a superdaemon that binds to zero or more TCP ports, and repeatedly spawns the server program that actually handles the necessary tasks (for example, responding to incoming commenctions).  The spawned server programs under L<Server::Starter> call accept(2) and handle the requests.
+
+The module can also be used to hot-deploy servers listening to unix domain sockets by omitting the --port option of L<start_server>.  In such case, the superdaemon will not bind to any TCP ports but instead concentrate on spawning the server program.
 
 To gracefully restart the server program, send SIGHUP to the superdaemon.  The superdaemon spawns a new server program, and if (and only if) it starts up successfully, sends SIGTERM to the old server program.
 
@@ -204,18 +204,18 @@ A Net::Server personality that can be run under L<Server::Starter> exists under 
 
 =item server_ports
 
-Returns one or more file descriptors on which the server program should call accept(2) in a hashref.  Each element of the hashref is: (host:port|port)=file_descriptor.
+Returns zero or more file descriptors on which the server program should call accept(2) in a hashref.  Each element of the hashref is: (host:port|port)=file_descriptor.
 
 =item start_server
 
-Starts the superdaemon.  Used by the C<strat_server> scirpt.
+Starts the superdaemon.  Used by the C<start_server> scirpt.
 
 =back
 
 =head1 AUTHOR
 
 Kazuho Oku E<lt>kazuhooku@gmail.comE<gt>
-Copyright (C) 2009 Cybozu Labs, Inc.
+Copyright (C) 2009-2010 Cybozu Labs, Inc.
 
 =head1 SEE ALSO
 

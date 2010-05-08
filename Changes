@@ -1,5 +1,8 @@
 Revision history for Perl extension Server::Starter.
 
+0.07  Sat May 08 14:00:00 2010
+	- --port option is now omittable (so daemons _not_ binding to TCP ports (like FCGI servers binding to unix domain sockets) can be hot-deployied using Server::Starter)
+ 
 0.06  Sat Jan 02 10:26:00 2010
 	- bugfix: start_server did not shutdown upon receiving SIGINT while the worker is failing to start up
 
