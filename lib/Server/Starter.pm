@@ -5,6 +5,7 @@ use strict;
 use warnings;
 use Carp;
 use Fcntl;
+use IO::Handle;
 use IO::Socket::INET;
 use POSIX qw(:sys_wait_h);
 use Proc::Wait3;
@@ -38,11 +39,23 @@ sub start_server {
         close $fh;
         return Scope::Guard->new(
             sub {
-                warn "yeah";
                 unlink $opts->{pid_file};
             },
         );
     }->();
+    
+    # open log file
+    if ($opts->{log_file}) {
+        open my $fh, '>>', $opts->{log_file}
+            or die "failed to open log file:$opts->{log_file}: $!";
+        STDOUT->flush;
+        STDERR->flush;
+        open STDOUT, '>&', $fh
+            or die "failed to dup STDOUT to file: $!";
+        open STDERR, '>&', $fh
+            or die "failed to dup STDERR to file: $!";
+        close $fh;
+    }
     
     print STDERR "start_server (pid:$$) starting now...\n";
     

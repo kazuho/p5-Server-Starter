@@ -30,11 +30,13 @@ EOT
     exit 0;
 }
 
-my (@opt_port, $opt_interval, $opt_pid_file, $opt_help, $opt_version);
+my (@opt_port, $opt_interval, $opt_log_file, $opt_pid_file, $opt_help,
+    $opt_version);
 
 GetOptions(
     'port=s'     => \@opt_port,
     'interval=i' => \$opt_interval,
+    'log-file=s' => \$opt_log_file,
     'pid-file=s' => \$opt_pid_file,
     help         => \$opt_help,
     version      => \$opt_version,
@@ -54,6 +56,7 @@ start_server(
     exec => \@ARGV,
     port => \@opt_port,
     ($opt_interval ? (interval => $opt_interval) : ()),
+    ($opt_log_file ? (log_file => $opt_log_file) : ()),
     ($opt_pid_file ? (pid_file => $opt_pid_file) : ()),
 );
 
