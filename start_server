@@ -23,16 +23,19 @@ Options:
                            to any ports)
   --interval=seconds       minimum interval to respawn the server process
                            (default: 1)
+  --pid_file=file.pid      server_starter PID write to file.pid
+                           (default: not write)
 
 EOT
     exit 0;
 }
 
-my (@opt_port, $opt_interval, $opt_help, $opt_version);
+my (@opt_port, $opt_interval, $opt_pid_file, $opt_help, $opt_version);
 
 GetOptions(
     'port=s'     => \@opt_port,
     'interval=i' => \$opt_interval,
+    'pid_file=s' => \$opt_pid_file,
     help         => \$opt_help,
     version      => \$opt_version,
 ) or exit 1;
@@ -46,6 +49,12 @@ if ($opt_version) {
 # validate options
 die "server program not specified\n"
     unless @ARGV;
+
+if ($opt_pid_file) {
+    open my $fh, '>', $opt_pid_file or die "$opt_pid_file: $!";
+    print $fh $$;
+    close $fh;
+}
 
 start_server(
     exec => \@ARGV,
