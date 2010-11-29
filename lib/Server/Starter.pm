@@ -8,6 +8,7 @@ use Fcntl;
 use IO::Socket::INET;
 use POSIX qw(:sys_wait_h);
 use Proc::Wait3;
+use Scope::Guard;
 
 use Exporter qw(import);
 
@@ -27,6 +28,21 @@ sub start_server {
         unless ref $ports eq 'ARRAY';
     croak "mandatory option ``exec'' is missing or is not an arrayref\n"
         unless $opts->{exec} && ref $opts->{exec} eq 'ARRAY';
+    
+    # open pid file
+    my $pid_file_guard = sub {
+        return unless $opts->{pid_file};
+        open my $fh, '>', $opts->{pid_file}
+            or die "failed to open file:$opts->{pid_file}: $!";
+        print $fh "$$\n";
+        close $fh;
+        return Scope::Guard->new(
+            sub {
+                warn "yeah";
+                unlink $opts->{pid_file};
+            },
+        );
+    }->();
     
     print STDERR "start_server (pid:$$) starting now...\n";
     

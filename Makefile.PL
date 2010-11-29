@@ -6,6 +6,7 @@ license 'perl';
 
 requires 'Getopt::Long';
 requires 'Proc::Wait3';
+requires 'Scope::Guard';
 test_requires 'Test::TCP' => '0.11';
 
 auto_include;
