@@ -19,8 +19,14 @@ our @EXPORT_OK = qw(start_server server_ports);
 my @signals_received;
 
 sub start_server {
-    my $opts = @_ == 1 ? shift : { @_ };
-    $opts->{interval} ||= 1;
+    my $opts = {
+        interval      => 1,
+        signal_on_hup => 'TERM',
+        (@_ == 1 ? @$_[0] : @_),
+    };
+    # normalize to the one that can be passed to kill
+    $opts->{signal_on_hup} =~ tr/a-z/A-Z/;
+    $opts->{signal_on_hup} =~ s/^SIG//i;
     
     # prepare args
     my $ports = $opts->{port}
@@ -118,13 +124,13 @@ sub start_server {
                 print STDERR "received HUP, spawning a new worker\n";
                 $old_workers{$current_worker} = 1;
                 $current_worker = _start_worker($opts);
-                print STDERR "new worker is now running, sending TERM to old workers:";
+                print STDERR "new worker is now running, sending $opts->{signal_on_hup} to old workers:";
                 if (%old_workers) {
                     print STDERR join(',', sort keys %old_workers), "\n";
                 } else {
                     print STDERR "none\n";
                 }
-                kill 'TERM', $_
+                kill $opts->{signal_on_hup}, $_
                     for sort keys %old_workers;
             } else {
                 goto CLEANUP;

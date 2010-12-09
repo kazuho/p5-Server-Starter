@@ -8,7 +8,13 @@ use lib qw(blib/lib lib);
 use IO::Socket::INET;
 use Server::Starter qw(server_ports);
 
-$SIG{TERM} = sub {
+my $sigfn = shift @ARGV;
+open my $sigfh, '>', $sigfn
+    or die "could not open file:$sigfn:$!";
+
+$SIG{TERM} = $SIG{USR1} = sub {
+    my $signame = shift;
+    print $sigfh $signame;
     exit 0;
 };
 
