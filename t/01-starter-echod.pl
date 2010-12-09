@@ -15,6 +15,7 @@ open my $sigfh, '>', $sigfn
 $SIG{TERM} = $SIG{USR1} = sub {
     my $signame = shift;
     print $sigfh $signame;
+    sleep 2;
     exit 0;
 };
 

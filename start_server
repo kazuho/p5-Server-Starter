@@ -26,15 +26,16 @@ Options:
   --pid-file=file.pid      write process id of start_server to the file
                            (default: do not write)
   --signal-on-hup=SIGNAME  name of the signal to be sent to the server process
-                           when start_server receives a SIGHUP
-                           (default: SIGTERM)
+                           when start_server receives a SIGHUP (default:
+                           SIGTERM)
+  --status-file=filename   writes the status of the servers (default: none)
 
 EOT
     exit 0;
 }
 
 my (@opt_port, $opt_interval, $opt_log_file, $opt_pid_file, $opt_signal_on_hup,
-    $opt_help, $opt_version);
+    $opt_status_file, $opt_help, $opt_version);
 
 GetOptions(
     'port=s'          => \@opt_port,
@@ -42,6 +43,7 @@ GetOptions(
     'log-file=s'      => \$opt_log_file,
     'pid-file=s'      => \$opt_pid_file,
     'signal-on-hup=s' => \$opt_signal_on_hup,
+    'status-file=s'   => \$opt_status_file,
     help              => \$opt_help,
     version           => \$opt_version,
 ) or exit 1;
@@ -63,6 +65,7 @@ start_server(
     ($opt_log_file ? (log_file => $opt_log_file) : ()),
     ($opt_pid_file ? (pid_file => $opt_pid_file) : ()),
     ($opt_signal_on_hup ? (signal_on_hup => $opt_signal_on_hup) : ()),
+    ($opt_status_file ? (status_file => $opt_status_file) : ()),
 );
 
 __END__

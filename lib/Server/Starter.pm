@@ -63,6 +63,13 @@ sub start_server {
         close $fh;
     }
     
+    # create guard that removes the status file
+    my $status_file_guard = $opts->{status_file} && Scope::Guard->new(
+        sub {
+            unlink $opts->{status_file};
+        },
+    );
+    
     print STDERR "start_server (pid:$$) starting now...\n";
     
     # start listening, setup envvar
@@ -104,9 +111,24 @@ sub start_server {
     } for (qw/INT TERM HUP/);
     $SIG{PIPE} = 'IGNORE';
     
+    # setup status monitor
+    my ($current_worker, %old_workers);
+    my $update_status = $opts->{status_file}
+        ? sub {
+            my $tmpfn = "$opts->{status_file}.$$";
+            open my $tmpfh, '>', $tmpfn
+                or die "failed to create temporary file:$tmpfn:$!";
+            printf $tmpfh "running:%d\n",
+                (keys(%old_workers) + ! ! $current_worker);
+            close $tmpfh;
+            rename $tmpfn, $opts->{status_file}
+                or die "failed to rename $tmpfn to $opts->{status_file}:$!";
+        } : sub {
+        };
+    
     # the main loop
-    my $current_worker = _start_worker($opts);
-    my %old_workers;
+    $current_worker = _start_worker($opts);
+    $update_status->();
     while (1) {
         my @r = wait3(! scalar @signals_received);
         if (@r) {
@@ -117,6 +139,7 @@ sub start_server {
             } else {
                 print STDERR "old worker $died_worker died, status:$status\n";
                 delete $old_workers{$died_worker};
+                $update_status->();
             }
         }
         for (; @signals_received; shift @signals_received) {
@@ -124,6 +147,7 @@ sub start_server {
                 print STDERR "received HUP, spawning a new worker\n";
                 $old_workers{$current_worker} = 1;
                 $current_worker = _start_worker($opts);
+                $update_status->();
                 print STDERR "new worker is now running, sending $opts->{signal_on_hup} to old workers:";
                 if (%old_workers) {
                     print STDERR join(',', sort keys %old_workers), "\n";
@@ -151,6 +175,7 @@ sub start_server {
             my ($died_worker, $status) = @r;
             print STDERR "worker $died_worker died, status:$status\n";
             delete $old_workers{$died_worker};
+            $update_status->();
         }
     }
     

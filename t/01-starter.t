@@ -3,7 +3,7 @@ use warnings;
 
 use File::Temp ();
 use Test::TCP;
-use Test::More tests => 20;
+use Test::More tests => 28;
 
 use Server::Starter qw(start_server);
 
@@ -17,8 +17,11 @@ for my $signal_on_hup ('TERM', 'USR1') {
         server => sub {
             my $port = shift;
             start_server(
-                port => $port,
-                exec => [ $^X, qw(t/01-starter-echod.pl), "$tempdir/signame" ],
+                port        => $port,
+                exec        => [
+                    $^X, qw(t/01-starter-echod.pl), "$tempdir/signame",
+                ],
+                status_file => "$tempdir/status",
                 ($signal_on_hup ne 'TERM'
                      ? (signal_on_hup => $signal_on_hup) : ()),
             );
@@ -35,12 +38,18 @@ for my $signal_on_hup ('TERM', 'USR1') {
             # check response and get pid
             is($sock->syswrite("hello"), 5, 'write');
             ok($sock->sysread($buf, 1048576), 'read');
+            undef $sock;
             like($buf, qr/^\d+:hello$/, 'read');
             $buf =~ /^(\d+):/;
             my $worker_pid = $1;
             # switch to next gen
+            sleep 2;
+            is get_status(), "running:1\n";
             kill 'HUP', $server_pid;
-            sleep 5;
+            sleep 3;
+            is get_status(), "running:2\n";
+            sleep 2;
+            is get_status(), "running:1\n";
             is(
                 do {
                     open my $fh, '<', "$tempdir/signame"
@@ -61,5 +70,12 @@ for my $signal_on_hup ('TERM', 'USR1') {
             isnt($buf, "$worker_pid:hello", 'pid should have changed');
         },
     );
+    
+    ok ! -e "$tempdir/status", 'no more status file';
+}
 
+sub get_status {
+    open my $fh, '<', "$tempdir/status"
+        or die "failed to open file:$tempdir/status:$!";
+    do { undef $/; <$fh> };
 }
