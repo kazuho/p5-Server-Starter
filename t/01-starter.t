@@ -44,12 +44,13 @@ for my $signal_on_hup ('TERM', 'USR1') {
             my $worker_pid = $1;
             # switch to next gen
             sleep 2;
-            is get_status(), "running:1\n";
+            my $status = get_status();
+            like(get_status(), qr/^1:\d+\n$/s, 'status before restart');
             kill 'HUP', $server_pid;
             sleep 3;
-            is get_status(), "running:2\n";
+            like(get_status(), qr/^1:\d+\n2:\d+$/s, 'status during restart');
             sleep 2;
-            is get_status(), "running:1\n";
+            like(get_status(), qr/^2:\d+\n$/s, 'status after restart');
             is(
                 do {
                     open my $fh, '<', "$tempdir/signame"

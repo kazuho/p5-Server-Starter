@@ -20,10 +20,11 @@ my @signals_received;
 
 sub start_server {
     my $opts = {
-        interval      => 1,
-        signal_on_hup => 'TERM',
         (@_ == 1 ? @$_[0] : @_),
     };
+    $opts->{interval} = 1
+        if not defined $opts->{interval};
+    $opts->{signal_on_hup} ||= 'TERM';
     # normalize to the one that can be passed to kill
     $opts->{signal_on_hup} =~ tr/a-z/A-Z/;
     $opts->{signal_on_hup} =~ s/^SIG//i;
@@ -118,8 +119,14 @@ sub start_server {
             my $tmpfn = "$opts->{status_file}.$$";
             open my $tmpfh, '>', $tmpfn
                 or die "failed to create temporary file:$tmpfn:$!";
-            printf $tmpfh "running:%d\n",
-                (keys(%old_workers) + ! ! $current_worker);
+            my %gen_pid = (
+                ($current_worker
+                 ? ($ENV{SERVER_STARTER_GENERATION} => $current_worker)
+                 : ()),
+                map { $old_workers{$_} => $_ } keys %old_workers,
+            );
+            print $tmpfh "$_:$gen_pid{$_}\n"
+                for sort keys %gen_pid;
             close $tmpfh;
             rename $tmpfn, $opts->{status_file}
                 or die "failed to rename $tmpfn to $opts->{status_file}:$!";
@@ -145,7 +152,7 @@ sub start_server {
         for (; @signals_received; shift @signals_received) {
             if ($signals_received[0] eq 'HUP') {
                 print STDERR "received HUP, spawning a new worker\n";
-                $old_workers{$current_worker} = 1;
+                $old_workers{$current_worker} = $ENV{SERVER_STARTER_GENERATION};
                 $current_worker = _start_worker($opts);
                 $update_status->();
                 print STDERR "new worker is now running, sending $opts->{signal_on_hup} to old workers:";
@@ -164,7 +171,7 @@ sub start_server {
     
  CLEANUP:
     # cleanup
-    $old_workers{$current_worker} = 1;
+    $old_workers{$current_worker} = $ENV{SERVER_STARTER_GENERATION};
     undef $current_worker;
     print STDERR "received $signals_received[0], sending TERM to all workers:",
         join(',', sort keys %old_workers), "\n";
@@ -180,6 +187,16 @@ sub start_server {
     }
     
     print STDERR "exitting\n";
+}
+
+sub restart_server {
+    my $opts = {
+        (@_ == 1 ? @$_[0] : @_),
+    };
+    die "--restart option requires --pid-file and --status-file to be set as well\n"
+        unless $opts->{pid_file} && $opts->{status_file};
+    
+    TODO();
 }
 
 sub server_ports {

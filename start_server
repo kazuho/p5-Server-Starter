@@ -30,27 +30,40 @@ Options:
                            SIGTERM)
   --status-file=filename   writes the status of the servers (default: none)
 
+  --restart                this is a wrapper command around, it reads the pid
+                           of the start_server process from --pid-file and
+                           sends SIGHUP to the process and waits until the
+                           old generation server exits by monitoring the
+                           contents of the --status-file
+
 EOT
     exit 0;
 }
 
-my (@opt_port, $opt_interval, $opt_log_file, $opt_pid_file, $opt_signal_on_hup,
-    $opt_status_file, $opt_help, $opt_version);
+my %opts = (
+    port => [],
+);
 
 GetOptions(
-    'port=s'          => \@opt_port,
-    'interval=i'      => \$opt_interval,
-    'log-file=s'      => \$opt_log_file,
-    'pid-file=s'      => \$opt_pid_file,
-    'signal-on-hup=s' => \$opt_signal_on_hup,
-    'status-file=s'   => \$opt_status_file,
-    help              => \$opt_help,
-    version           => \$opt_version,
+    map {
+        $_ => do {
+            my $name = (split '=', $_, 2)[0];
+            $name =~ s/-/_/g;
+            $opts{$name} ||= undef;
+            ref($opts{$name}) ? $opts{$name} : \$opts{$name};
+        },
+    } qw(port=s interval=i log-file=s pid-file=s signal-on-hup=s status-file=s
+         help version),
 ) or exit 1;
 usage()
-    if $opt_help;
-if ($opt_version) {
+    if $opts{help};
+if ($opts{version}) {
     print "$Server::Starter::VERSION\n";
+    exit 0;
+}
+
+if ($opts{restart}) {
+    restart_server(%opts);
     exit 0;
 }
 
@@ -58,14 +71,10 @@ if ($opt_version) {
 die "server program not specified\n"
     unless @ARGV;
 
+warn "*** $opts{pid_file}";
 start_server(
+    %opts,
     exec => \@ARGV,
-    port => \@opt_port,
-    ($opt_interval ? (interval => $opt_interval) : ()),
-    ($opt_log_file ? (log_file => $opt_log_file) : ()),
-    ($opt_pid_file ? (pid_file => $opt_pid_file) : ()),
-    ($opt_signal_on_hup ? (signal_on_hup => $opt_signal_on_hup) : ()),
-    ($opt_status_file ? (status_file => $opt_status_file) : ()),
 );
 
 __END__
