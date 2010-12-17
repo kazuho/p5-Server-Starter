@@ -7,6 +7,7 @@ use Carp;
 use Fcntl;
 use IO::Handle;
 use IO::Socket::INET;
+use List::MoreUtils qw(uniq);
 use POSIX qw(:sys_wait_h);
 use Proc::Wait3;
 use Scope::Guard;
@@ -14,7 +15,7 @@ use Scope::Guard;
 use Exporter qw(import);
 
 our $VERSION = '0.08';
-our @EXPORT_OK = qw(start_server server_ports);
+our @EXPORT_OK = qw(start_server restart_server server_ports);
 
 my @signals_received;
 
@@ -196,7 +197,39 @@ sub restart_server {
     die "--restart option requires --pid-file and --status-file to be set as well\n"
         unless $opts->{pid_file} && $opts->{status_file};
     
-    TODO();
+    # get pid
+    my $pid = do {
+        open my $fh, '<', $opts->{pid_file}
+            or die "failed to open file:$opts->{pid_file}:$!";
+        my $line = <$fh>;
+        chomp $line;
+        $line;
+    };
+    
+    # function that returns a list of active generations in sorted order
+    my $get_generations = sub {
+        open my $fh, '<', $opts->{status_file}
+            or die "failed to open file:$opts->{status_file}:$!";
+        uniq sort { $a <=> $b } map { /^(\d+):/ ? ($1) : () } <$fh>;
+    };
+    
+    # wait for this generation
+    my $wait_for = do {
+        my @gens = $get_generations->()
+            or die "no active process found in the status file";
+        pop(@gens) + 1;
+    };
+    
+    # send HUP
+    kill 'HUP', $pid
+        or die "failed to send SIGHUP to the server process:$!";
+    
+    # wait for the generation
+    while (1) {
+        my @gens = $get_generations->();
+        last if scalar(@gens) == 1 && $gens[0] == $wait_for;
+        sleep 1;
+    }
 }
 
 sub server_ports {
