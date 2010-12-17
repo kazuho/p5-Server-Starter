@@ -1,7 +1,10 @@
 Revision history for Perl extension Server::Starter.
 
+0.09
+	- added options: --signal-on-hup, --status-file, --restart
+
 0.08
-	- add --log-file and --pid-file options
+	- added --pid-file option
 
 0.07  Sat May 08 14:00:00 2010
 	- --port option is now omittable (so daemons _not_ binding to TCP ports (like FCGI servers binding to unix domain sockets) can be hot-deployied using Server::Starter)

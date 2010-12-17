@@ -14,7 +14,7 @@ use Scope::Guard;
 
 use Exporter qw(import);
 
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 our @EXPORT_OK = qw(start_server restart_server server_ports);
 
 my @signals_received;
