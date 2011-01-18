@@ -7,6 +7,7 @@ use Carp;
 use Fcntl;
 use IO::Handle;
 use IO::Socket::INET;
+use IO::Socket::UNIX;
 use List::MoreUtils qw(uniq);
 use POSIX qw(:sys_wait_h);
 use Proc::Wait3;
@@ -14,7 +15,7 @@ use Scope::Guard;
 
 use Exporter qw(import);
 
-our $VERSION = '0.09';
+our $VERSION = '0.10';
 our @EXPORT_OK = qw(start_server restart_server server_ports);
 
 my @signals_received;
@@ -31,10 +32,14 @@ sub start_server {
     $opts->{signal_on_hup} =~ s/^SIG//i;
     
     # prepare args
-    my $ports = $opts->{port}
-        or croak "mandatory option ``port'' is missing\n";
+    my $ports = $opts->{port};
+    my $paths = $opts->{path};
+    croak "either of ``port'' or ``path'' option is mandatory\n"
+        unless $ports || $paths;
     $ports = [ $ports ]
-        unless ref $ports eq 'ARRAY';
+        if ! ref $ports && defined $ports;
+    $paths = [ $paths ]
+        if ! ref $paths && defined $paths;
     croak "mandatory option ``exec'' is missing or is not an arrayref\n"
         unless $opts->{exec} && ref $opts->{exec} eq 'ARRAY';
     
@@ -102,6 +107,16 @@ sub start_server {
         fcntl($sock, F_SETFD, my $flags = '')
                 or die "fcntl(F_SETFD, 0) failed:$!";
         push @sockenv, "$port=" . $sock->fileno;
+        push @sock, $sock;
+    }
+    for my $path (@$paths) {
+        my $sock = IO::Socket::UNIX->new(
+            Listen => Socket::SOMAXCONN(),
+            Local  => $path,
+        ) or die "failed to listen to file $path:$!";
+        fcntl($sock, F_SETFD, my $flags = '')
+            or die "fcntl(F_SETFD, 0) failed:$!";
+        push @sockenv, "$path=" . $sock->fileno;
         push @sock, $sock;
     }
     $ENV{SERVER_STARTER_PORT} = join ";", @sockenv;
@@ -295,9 +310,7 @@ Server::Starter - a superdaemon for hot-deploying server programs
 
 =head1 DESCRIPTION
 
-It is often a pain to write a server program that supports graceful restarts, with no resource leaks.  L<Server::Starter>, solves the problem by splitting the task into two.  One is L<start_server>, a script provided as a part of the module, which works as a superdaemon that binds to zero or more TCP ports, and repeatedly spawns the server program that actually handles the necessary tasks (for example, responding to incoming commenctions).  The spawned server programs under L<Server::Starter> call accept(2) and handle the requests.
-
-The module can also be used to hot-deploy servers listening to unix domain sockets by omitting the --port option of L<start_server>.  In such case, the superdaemon will not bind to any TCP ports but instead concentrate on spawning the server program.
+It is often a pain to write a server program that supports graceful restarts, with no resource leaks.  L<Server::Starter>, solves the problem by splitting the task into two.  One is L<start_server>, a script provided as a part of the module, which works as a superdaemon that binds to zero or more TCP ports or unix sockets, and repeatedly spawns the server program that actually handles the necessary tasks (for example, responding to incoming commenctions).  The spawned server programs under L<Server::Starter> call accept(2) and handle the requests.
 
 To gracefully restart the server program, send SIGHUP to the superdaemon.  The superdaemon spawns a new server program, and if (and only if) it starts up successfully, sends SIGTERM to the old server program.
 
@@ -314,7 +327,7 @@ A Net::Server personality that can be run under L<Server::Starter> exists under 
 
 =item server_ports
 
-Returns zero or more file descriptors on which the server program should call accept(2) in a hashref.  Each element of the hashref is: (host:port|port)=file_descriptor.
+Returns zero or more file descriptors on which the server program should call accept(2) in a hashref.  Each element of the hashref is: (host:port|port|path_of_unix_socket) => file_descriptor.
 
 =item start_server
 
@@ -324,8 +337,7 @@ Starts the superdaemon.  Used by the C<start_server> scirpt.
 
 =head1 AUTHOR
 
-Kazuho Oku E<lt>kazuhooku@gmail.comE<gt>
-Copyright (C) 2009-2010 Cybozu Labs, Inc.
+Kazuho Oku
 
 =head1 SEE ALSO
 

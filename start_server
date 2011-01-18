@@ -9,6 +9,7 @@ use Server::Starter qw(start_server restart_server);
 
 my %opts = (
     port => [],
+    path => [],
 );
 
 GetOptions(
@@ -19,8 +20,8 @@ GetOptions(
             $opts{$name} ||= undef;
             ref($opts{$name}) ? $opts{$name} : \$opts{$name};
         },
-    } qw(port=s interval=i log-file=s pid-file=s signal-on-hup=s status-file=s
-         restart help version),
+    } qw(port=s path=s interval=i log-file=s pid-file=s signal-on-hup=s
+         status-file=s restart help version),
 ) or exit 1;
 pod2usage(
     -exitval => 0,
@@ -68,6 +69,10 @@ This script is a frontend of L<Server::Starter>.  For more information please re
 
 TCP port to listen to (if omitted, will not bind to any ports)
 
+=head2 --path=path
+
+path at where to listen using unix socket (optional)
+
 =head2 --interval=seconds
 
 minimum interval to respawn the server program (default: 1)
@@ -98,8 +103,7 @@ prints the version number
 
 =head1 AUTHOR
 
-Kazuho Oku E<lt>kazuhooku@gmail.comE<gt>
-Copyright (C) 2009 Cybozu Labs, Inc.
+Kazuho Oku
 
 =head1 SEE ALSO
 
