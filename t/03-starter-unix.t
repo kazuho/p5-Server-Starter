@@ -3,7 +3,7 @@ use warnings;
 
 use File::Temp ();
 use IO::Socket::UNIX;
-use Test::More tests => 3;
+use Test::More tests => 4;
 use Test::SharedFork;
 
 use Server::Starter qw(start_server);
@@ -33,6 +33,8 @@ if ($pid == 0) {
     is $sock->sysread(my $buf, 5), 5, 'read length';
     is $buf, 'hello', 'read data';
     kill 'TERM', $pid;
+    while (wait != $pid) {}
+    ok ! -e $sockfile, 'socket file removed after shutdown';
 }
 
 unlink $sockfile;

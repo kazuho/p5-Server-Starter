@@ -109,7 +109,19 @@ sub start_server {
         push @sockenv, "$port=" . $sock->fileno;
         push @sock, $sock;
     }
+    my $path_remove_guard = Scope::Guard->new(
+        sub {
+            -S $_ and unlink $_
+                for @$paths;
+        },
+    );
     for my $path (@$paths) {
+        if (-S $path) {
+            warn "removing existing socket file:$path";
+            unlink $path
+                or die "failed to remove existing socket file:$path:$!";
+        }
+        unlink $path;
         my $sock = IO::Socket::UNIX->new(
             Listen => Socket::SOMAXCONN(),
             Local  => $path,
