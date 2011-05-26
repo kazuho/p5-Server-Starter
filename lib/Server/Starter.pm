@@ -214,7 +214,7 @@ sub start_server {
         }
     }
     
-    print STDERR "exitting\n";
+    print STDERR "exiting\n";
 }
 
 sub restart_server {
