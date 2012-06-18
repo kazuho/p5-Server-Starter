@@ -61,7 +61,7 @@ start_server - a superdaemon for hot-deploying server programs
 
 =head1 DESCRIPTION
 
-This script is a frontend of L<Server::Starter>.  For more information please refer to the documenation of the module.
+This script is a frontend of L<Server::Starter>.  For more information please refer to the documentation of the module.
 
 =head1 OPTIONS
 
