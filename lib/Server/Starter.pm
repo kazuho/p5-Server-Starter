@@ -277,9 +277,10 @@ sub _start_worker {
         die "fork(2) failed:$!"
             unless defined $pid;
         if ($pid == 0) {
+            my @args = @{$opts->{exec}};
             # child process
-            { exec(@{$opts->{exec}}) };
-            print STDERR "failed to exec $opts->{exec}->[0]:$!";
+            { exec { $args[0] } @args };
+            print STDERR "failed to exec $args[0]$!";
             exit(255);
         }
         print STDERR "starting new worker $pid\n";
