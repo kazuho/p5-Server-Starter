@@ -20,7 +20,7 @@ GetOptions(
             $opts{$name} ||= undef;
             ref($opts{$name}) ? $opts{$name} : \$opts{$name};
         },
-    } qw(port=s path=s interval=i log-file=s pid-file=s signal-on-hup=s
+    } qw(port=s path=s interval=i log-file=s pid-file=s signal-on-hup=s signal-on-term=s
          status-file=s restart help version),
 ) or exit 1;
 pod2usage(
@@ -79,7 +79,11 @@ minimum interval to respawn the server program (default: 1)
 
 =head2 --signal-on-hup=SIGNAL
 
-name of the signal to be sent to the server process when start_server receives a SIGHUP (default: SIGTERM)
+name of the signal to be sent to the server process when start_server receives a SIGHUP (default: SIGTERM). If you use this option, be sure to also use C<--signal-on-term> below.
+
+=head2 --signal-on-term=SIGNAL
+
+name of the signal to be sent to the server process when start_server receives a SIGTERM (default: SIGTERM)
 
 =head2 --pid-file=filename
 
