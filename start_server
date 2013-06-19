@@ -20,7 +20,7 @@ GetOptions(
             $opts{$name} ||= undef;
             ref($opts{$name}) ? $opts{$name} : \$opts{$name};
         },
-    } qw(port=s path=s interval=i log-file=s pid-file=s signal-on-hup=s signal-on-term=s
+    } qw(port=s path=s interval=i log-file=s pid-file=s dir=s signal-on-hup=s signal-on-term=s
          status-file=s restart help version),
 ) or exit 1;
 pod2usage(
@@ -72,6 +72,10 @@ TCP port to listen to (if omitted, will not bind to any ports)
 =head2 --path=path
 
 path at where to listen using unix socket (optional)
+
+=head2 --dir=path
+
+working directory, start_server do chdir to before exec (optional)
 
 =head2 --interval=seconds
 
