@@ -28,7 +28,7 @@ elsif ( $pid == 0 ) {
         or die "Died: failed to redirect STDOUT";
     close $logwh;
     start_server(
-        port => $port,
+        port => $port, #not use
         exec        => [
             $^X, '-e', 'printf "%s\n", -f "dir_status" ? "OK" : "NG"; sleep(1)'
         ],
