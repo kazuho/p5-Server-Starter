@@ -285,6 +285,9 @@ sub _start_worker {
         if ($pid == 0) {
             my @args = @{$opts->{exec}};
             # child process
+            if ( exists $opts->{dir} ) {
+                chdir $opts->{dir} or die "failed to chdir:$!";
+            }
             { exec { $args[0] } @args };
             print STDERR "failed to exec $args[0]$!";
             exit(255);

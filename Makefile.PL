@@ -8,7 +8,7 @@ requires 'Getopt::Long';
 requires 'List::MoreUtils';
 requires 'Proc::Wait3';
 requires 'Scope::Guard';
-test_requires 'Test::TCP' => '0.11';
+test_requires 'Test::TCP' => '2.00';
 
 auto_include;
 auto_install;
