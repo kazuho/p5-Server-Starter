@@ -1,5 +1,8 @@
 Revision history for Perl extension Server::Starter.
 
+0.13
+	- add option: --dir (thanks to kazeburo)
+
 0.12
 	- bugfix: support for programs with whitespaces (thanks to clkao)
 	- add option: --signal-on-term (thanks to miyagawa)
