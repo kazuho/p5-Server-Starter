@@ -49,6 +49,15 @@ sub start_server {
     # open pid file
     my $pid_file_guard = sub {
         return unless $opts->{pid_file};
+        if(-e $opts->{pid_file}){
+            open my $fh, '<', $opts->{pid_file}
+                or die "failed to open file:$opts->{pid_file}: $!";
+            chomp(my $old_pid = <$fh>);
+            if(kill(0, $old_pid)){
+                croak "another Server::Starter is running. pid:$old_pid\n";
+            }
+            croak "pid files exists:$opts->{pid_file}\n";
+        }
         open my $fh, '>', $opts->{pid_file}
             or die "failed to open file:$opts->{pid_file}: $!";
         print $fh "$$\n";
@@ -59,6 +68,7 @@ sub start_server {
             },
         );
     }->();
+die "XXX";
     
     # open log file
     if ($opts->{log_file}) {
