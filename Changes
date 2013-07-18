@@ -1,5 +1,10 @@
 Revision history for Perl extension Server::Starter.
 
+0.15
+	- added option: --envdir for reloading configuration (thanks to limitusus)
+	- added options: --enable-auto-restart and interval for periodical automatic restarting (thanks to limitusus)
+	- added option: --kill-old-delay for delaying SIGTERM (thanks to limitusus)
+
 0.14
 	- fix regression in 0.13; start_server wo. "--dir" was causing errors
 
