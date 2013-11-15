@@ -184,7 +184,9 @@ sub start_server {
     my $last_restart_time = time();
     my $restart_flag = 0;
     while (1) {
-        _reload_env();
+        my %loaded_env = _reload_env();
+        my @loaded_env_keys = keys %loaded_env;
+        local @ENV{@loaded_env_keys} = map { $loaded_env{$_} } (@loaded_env_keys);
         if ($ENV{ENABLE_AUTO_RESTART}) {
             # restart workers periodically
             $auto_restart_interval = $ENV{AUTO_RESTART_INTERVAL} ||= 360;
@@ -328,12 +330,14 @@ sub _reload_env {
     return if !defined $dn or !-d $dn;
     my $d;
     opendir($d, $dn) or return;
+    my %env;
     while (my $n = readdir($d)) {
         next if $n =~ /^\./;
         open my $fh, '<', "$dn/$n" or next;
         chomp(my $v = <$fh>);
-        $ENV{$n} = $v if $v ne '';
+        $env{$n} = $v if defined $v;
     }
+    return %env;
 }
 
 sub _start_worker {
