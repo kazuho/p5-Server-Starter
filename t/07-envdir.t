@@ -3,7 +3,7 @@ use warnings;
 
 use File::Temp ();
 use Test::TCP;
-use Test::More tests => 7;
+use Test::More tests => 4;
 
 use Server::Starter qw(start_server);
 
@@ -33,17 +33,25 @@ test_tcp(
     },
     client => sub {
         my ($port, $server_pid) = @_;
-        my $buf;
         #sleep 1;
-        my $sock = IO::Socket::INET->new(
-            PeerAddr => "127.0.0.1:$port",
-            Proto    => 'tcp',
-        );
-        ok($sock, 'connect');
-        # check response
-        ok($sock->sysread($buf, 1048576), 'read');
-        undef $sock;
+        my $fetch_env = sub {
+            my $sock = IO::Socket::INET->new(
+                PeerAddr => "127.0.0.1:$port",
+                Proto    => 'tcp',
+            ) or die $!;
+            my $buf;
+            $sock->sysread($buf, 1048576)
+                or die $!;
+            undef $sock;
+            $buf;
+        };
+        my $restart = sub {
+            sleep 1;
+            kill "HUP", $server_pid;
+            sleep 2;
+        };
         # Initial worker does not read envdir
+        my $buf = $fetch_env->();
         unlike($buf, qr/^FOO=foo-value1$/m, 'changed env');
         # rewrite envdir
         open my $envfh, ">", "$tempdir/env/FOO" or die $!;
@@ -51,19 +59,18 @@ test_tcp(
         close $envfh;
         undef $envfh;
         # switch to next gen
-        sleep 1;
-        kill "HUP", $server_pid;
-        sleep 2;
-        $sock = IO::Socket::INET->new(
-            PeerAddr => "127.0.0.1:$port",
-            Proto    => 'tcp',
-        );
-        ok($sock, 'reconnect');
-        # check response
-        ok($sock->sysread($buf, 1048576), 'read');
-        undef $sock;
+        $restart->();
         # new worker reads the rewritten envdir
+        $buf = $fetch_env->();
         like($buf, qr/^FOO=foo-value2$/m, 'changed env');
+        # remove the env file and check that the removal gets reflected
+        unlink "$tempdir/env/FOO"
+            or die $!;
+        # switch to next gen
+        $restart->();
+        # new worker reads the rewritten envdir
+        $buf = $fetch_env->();
+        unlike($buf, qr/^FOO=foo-value2$/m, 'removed env');
     },
 );
 
