@@ -21,7 +21,7 @@ GetOptions(
             ref($opts{$name}) ? $opts{$name} : \$opts{$name};
         },
     } qw(port=s path=s interval=i log-file=s pid-file=s dir=s signal-on-hup=s signal-on-term=s
-         envdir=s enable-auto-restart=i auto-restart-interval=i kill-old-delay=i
+         backlog=i envdir=s enable-auto-restart=i auto-restart-interval=i kill-old-delay=i
          status-file=s restart help version),
 ) or exit 1;
 pod2usage(
