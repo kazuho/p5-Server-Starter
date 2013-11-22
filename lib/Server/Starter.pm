@@ -28,6 +28,7 @@ sub start_server {
         if not defined $opts->{interval};
     $opts->{signal_on_hup}  ||= 'TERM';
     $opts->{signal_on_term} ||= 'TERM';
+    $opts->{backlog} ||= Socket::SOMAXCONN();
     for ($opts->{signal_on_hup}, $opts->{signal_on_term}) {
         # normalize to the one that can be passed to kill
         tr/a-z/A-Z/;
@@ -89,7 +90,7 @@ sub start_server {
         my $sock;
         if ($port =~ /^\s*(\d+)\s*$/) {
             $sock = IO::Socket::INET->new(
-                Listen    => Socket::SOMAXCONN(),
+                Listen    => $opts->{backlog},
                 LocalPort => $port,
                 Proto     => 'tcp',
                 ReuseAddr => 1,
@@ -97,7 +98,7 @@ sub start_server {
         } elsif ($port =~ /^\s*(.*)\s*:\s*(\d+)\s*$/) {
             $port = "$1:$2";
             $sock = IO::Socket::INET->new(
-                Listen    => Socket::SOMAXCONN(),
+                Listen    => $opts->{backlog},
                 LocalAddr => $port,
                 Proto     => 'tcp',
                 ReuseAddr => 1,
@@ -126,7 +127,7 @@ sub start_server {
         }
         unlink $path;
         my $sock = IO::Socket::UNIX->new(
-            Listen => Socket::SOMAXCONN(),
+            Listen => $opts->{backlog},
             Local  => $path,
         ) or die "failed to listen to file $path:$!";
         fcntl($sock, F_SETFD, my $flags = '')
