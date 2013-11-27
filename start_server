@@ -21,7 +21,7 @@ GetOptions(
             ref($opts{$name}) ? $opts{$name} : \$opts{$name};
         },
     } qw(port=s path=s interval=i log-file=s pid-file=s dir=s signal-on-hup=s signal-on-term=s
-         envdir=s enable-auto-restart=i auto-restart-interval=i kill-old-delay=i
+         backlog=i envdir=s enable-auto-restart=i auto-restart-interval=i kill-old-delay=i
          status-file=s restart help version),
 ) or exit 1;
 pod2usage(
@@ -122,6 +122,9 @@ This can be overwritten by environment variable C<KILL_OLD_DELAY>.
 =head2 --restart
 
 this is a wrapper command that reads the pid of the start_server process from --pid-file, sends SIGHUP to the process and waits until the server(s) of the older generation(s) die by monitoring the contents of the --status-file
+
+=head2 --backlog
+specifies a listen backlog parameter, whose default is SOMAXCONN (usually 128 on Linux). While SOMAXCONN is enough for most loads, large backlog is required for heavy loads.
 
 =head2 --help
 
