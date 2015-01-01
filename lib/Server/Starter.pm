@@ -136,10 +136,12 @@ sub start_server {
                 or die "failed to remove existing socket file:$path:$!";
         }
         unlink $path;
+        my $saved_umask = umask(0);
         my $sock = IO::Socket::UNIX->new(
             Listen => $opts->{backlog},
             Local  => $path,
         ) or die "failed to listen to file $path:$!";
+        umask($saved_umask);
         fcntl($sock, F_SETFD, my $flags = '')
             or die "fcntl(F_SETFD, 0) failed:$!";
         push @sockenv, "$path=" . $sock->fileno;
