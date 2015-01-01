@@ -167,6 +167,37 @@ sub start_server {
         } : sub {
         };
 
+    # setup the start_worker function
+    my $start_worker = sub {
+        my $pid;
+        while (1) {
+            $ENV{SERVER_STARTER_GENERATION}++;
+            $pid = fork;
+            die "fork(2) failed:$!"
+                unless defined $pid;
+            if ($pid == 0) {
+                my @args = @{$opts->{exec}};
+                # child process
+                if (defined $opts->{dir}) {
+                    chdir $opts->{dir} or die "failed to chdir:$!";
+                }
+                { exec { $args[0] } @args };
+                print STDERR "failed to exec $args[0]$!";
+                exit(255);
+            }
+            print STDERR "starting new worker $pid\n";
+            sleep $opts->{interval};
+            if ((grep { $_ ne 'HUP' } @signals_received)
+                    || waitpid($pid, WNOHANG) <= 0) {
+                last;
+            }
+            print STDERR "new worker $pid seems to have failed to start, exit status:$?\n";
+        }
+        # ready, update the environment
+        $current_worker = $pid;
+        $update_status->();
+    };
+
     # setup the cleanup function
     my $cleanup = sub {
         my $sig = shift;
@@ -189,8 +220,7 @@ sub start_server {
     };
 
     # the main loop
-    $current_worker = _start_worker($opts);
-    $update_status->();
+    $start_worker->();
     while (1) {
         # wait for next signal
         my @r = wait3(! scalar @signals_received);
@@ -199,7 +229,7 @@ sub start_server {
             my ($died_worker, $status) = @r;
             if ($died_worker == $current_worker) {
                 print STDERR "worker $died_worker died unexpectedly with status:$status, restarting\n";
-                $current_worker = _start_worker($opts);
+                $start_worker->();
             } else {
                 print STDERR "old worker $died_worker died, status:$status\n";
                 delete $old_workers{$died_worker};
@@ -221,8 +251,7 @@ sub start_server {
         # restart if requested
         if ($restart) {
             $old_workers{$current_worker} = $ENV{SERVER_STARTER_GENERATION};
-            $current_worker = _start_worker($opts);
-            $update_status->();
+            $start_worker->();
             print STDERR "new worker is now running, sending $opts->{signal_on_hup} to old workers:";
             if (%old_workers) {
                 print STDERR join(',', sort keys %old_workers), "\n";
@@ -291,35 +320,6 @@ sub server_ports {
         +(split /=/, $_, 2)
     } split /;/, $ENV{SERVER_STARTER_PORT};
     \%ports;
-}
-
-sub _start_worker {
-    my $opts = shift;
-    my $pid;
-    while (1) {
-        $ENV{SERVER_STARTER_GENERATION}++;
-        $pid = fork;
-        die "fork(2) failed:$!"
-            unless defined $pid;
-        if ($pid == 0) {
-            my @args = @{$opts->{exec}};
-            # child process
-            if (defined $opts->{dir}) {
-                chdir $opts->{dir} or die "failed to chdir:$!";
-            }
-            { exec { $args[0] } @args };
-            print STDERR "failed to exec $args[0]$!";
-            exit(255);
-        }
-        print STDERR "starting new worker $pid\n";
-        sleep $opts->{interval};
-        if ((grep { $_ ne 'HUP' } @signals_received)
-                || waitpid($pid, WNOHANG) <= 0) {
-            last;
-        }
-        print STDERR "new worker $pid seems to have failed to start, exit status:$?\n";
-    }
-    $pid;
 }
 
 1;
