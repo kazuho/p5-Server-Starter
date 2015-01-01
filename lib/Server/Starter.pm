@@ -34,11 +34,6 @@ sub start_server {
         tr/a-z/A-Z/;
         s/^SIG//i;
     }
-    $opts->{kill_old_delay} = $opts->{enable_auto_restart} ? 5 : 0
-         if not defined $opts->{kill_old_delay};
-    if ($opts->{enable_auto_restart}) {
-        $opts->{auto_restart_interval} ||= 360;
-    }
 
     # prepare args
     my $ports = $opts->{port};
@@ -51,7 +46,17 @@ sub start_server {
         if ! ref $paths && defined $paths;
     croak "mandatory option ``exec'' is missing or is not an arrayref\n"
         unless $opts->{exec} && ref $opts->{exec} eq 'ARRAY';
-    
+
+    # set envs
+    $ENV{ENVDIR} = $opts->{envdir}
+        if defined $opts->{envdir};
+    $ENV{ENABLE_AUTO_RESTART} = $opts->{enable_auto_restart}
+        if defined $opts->{enable_auto_restart};
+    $ENV{KILL_OLD_DELAY} = $opts->{kill_old_delay}
+        if defined $opts->{kill_old_delay};
+    $ENV{AUTO_RESTART_INTERVAL} = $opts->{auto_restart_interval}
+        if defined $opts->{auto_restart_interval};
+
     # open pid file
     my $pid_file_guard = sub {
         return unless $opts->{pid_file};
@@ -206,7 +211,7 @@ sub start_server {
     my $wait = sub {
         my $block = @signals_received == 0;
         my @r;
-        if ($block && $opts->{enable_auto_restart}) {
+        if ($block && $ENV{ENABLE_AUTO_RESTART}) {
             alarm(1);
             @r = wait3($block);
             alarm(0);
@@ -242,6 +247,12 @@ sub start_server {
     while (1) {
         # wait for next signal (or when auto-restart becomes necessary)
         my @r = $wait->();
+        # reload env if necessary
+        my %loaded_env = _reload_env();
+        my @loaded_env_keys = keys %loaded_env;
+        local @ENV{@loaded_env_keys} = map { $loaded_env{$_} } (@loaded_env_keys);
+        $ENV{AUTO_RESTART_INTERVAL} ||= 360
+            if $ENV{ENABLE_AUTO_RESTART};
         # restart if worker died
         if (@r) {
             my ($died_worker, $status) = @r;
@@ -269,8 +280,8 @@ sub start_server {
             }
         }
         if (! $restart) {
-            if ($opts->{enable_auto_restart} && $last_restart_time + $opts->{auto_restart_interval} <= time) {
-                print STDERR "autorestart triggered (interval=$opts->{auto_restart_interval})\n";
+            if ($ENV{ENABLE_AUTO_RESTART} && $last_restart_time + $ENV{AUTO_RESTART_INTERVAL} <= time) {
+                print STDERR "autorestart triggered (interval=$ENV{AUTO_RESTART_INTERVAL})\n";
                 $restart = 1;
             }
         }
@@ -284,9 +295,10 @@ sub start_server {
             } else {
                 print STDERR "none\n";
             }
-            if ($opts->{kill_old_delay} != 0) {
-                print STDERR "sleeping $opts->{kill_old_delay} secs before killing old workers\n";
-                sleep $opts->{kill_old_delay};
+            my $kill_old_delay = defined $ENV{KILL_OLD_DELAY} ? $ENV{KILL_OLD_DELAY} : $ENV{ENABLE_AUTO_RESTART} ? 5 : 0;
+            if ($kill_old_delay != 0) {
+                print STDERR "sleeping $kill_old_delay secs before killing old workers\n";
+                sleep $kill_old_delay;
             }
             print STDERR "killing old workers\n";
             kill $opts->{signal_on_hup}, $_
@@ -346,6 +358,21 @@ sub server_ports {
         +(split /=/, $_, 2)
     } split /;/, $ENV{SERVER_STARTER_PORT};
     \%ports;
+}
+
+sub _reload_env {
+    my $dn = $ENV{ENVDIR};
+    return if !defined $dn or !-d $dn;
+    my $d;
+    opendir($d, $dn) or return;
+    my %env;
+    while (my $n = readdir($d)) {
+        next if $n =~ /^\./;
+        open my $fh, '<', "$dn/$n" or next;
+        chomp(my $v = <$fh>);
+        $env{$n} = $v if defined $v;
+    }
+    return %env;
 }
 
 1;
