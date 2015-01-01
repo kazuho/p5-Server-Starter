@@ -15,7 +15,7 @@ use Scope::Guard;
 
 use Exporter qw(import);
 
-our $VERSION = '0.18_01';
+our $VERSION = '0.14';
 our @EXPORT_OK = qw(start_server restart_server server_ports);
 
 my @signals_received;
@@ -28,7 +28,6 @@ sub start_server {
         if not defined $opts->{interval};
     $opts->{signal_on_hup}  ||= 'TERM';
     $opts->{signal_on_term} ||= 'TERM';
-    $opts->{backlog} ||= Socket::SOMAXCONN();
     for ($opts->{signal_on_hup}, $opts->{signal_on_term}) {
         # normalize to the one that can be passed to kill
         tr/a-z/A-Z/;
@@ -46,16 +45,6 @@ sub start_server {
         if ! ref $paths && defined $paths;
     croak "mandatory option ``exec'' is missing or is not an arrayref\n"
         unless $opts->{exec} && ref $opts->{exec} eq 'ARRAY';
-    
-    # set envs
-    $ENV{ENVDIR} = $opts->{envdir}
-        if defined $opts->{envdir};
-    $ENV{ENABLE_AUTO_RESTART} = $opts->{enable_auto_restart}
-        if defined $opts->{enable_auto_restart};
-    $ENV{KILL_OLD_DELAY} = $opts->{kill_old_delay}
-        if defined $opts->{kill_old_delay};
-    $ENV{AUTO_RESTART_INTERVAL} = $opts->{auto_restart_interval}
-        if defined $opts->{auto_restart_interval};
     
     # open pid file
     my $pid_file_guard = sub {
@@ -100,7 +89,7 @@ sub start_server {
         my $sock;
         if ($port =~ /^\s*(\d+)\s*$/) {
             $sock = IO::Socket::INET->new(
-                Listen    => $opts->{backlog},
+                Listen    => Socket::SOMAXCONN(),
                 LocalPort => $port,
                 Proto     => 'tcp',
                 ReuseAddr => 1,
@@ -108,7 +97,7 @@ sub start_server {
         } elsif ($port =~ /^\s*(.*)\s*:\s*(\d+)\s*$/) {
             $port = "$1:$2";
             $sock = IO::Socket::INET->new(
-                Listen    => $opts->{backlog},
+                Listen    => Socket::SOMAXCONN(),
                 LocalAddr => $port,
                 Proto     => 'tcp',
                 ReuseAddr => 1,
@@ -136,12 +125,10 @@ sub start_server {
                 or die "failed to remove existing socket file:$path:$!";
         }
         unlink $path;
-        my $saved_umask = umask(0);
         my $sock = IO::Socket::UNIX->new(
-            Listen => $opts->{backlog},
+            Listen => Socket::SOMAXCONN(),
             Local  => $path,
         ) or die "failed to listen to file $path:$!";
-        umask($saved_umask);
         fcntl($sock, F_SETFD, my $flags = '')
             or die "fcntl(F_SETFD, 0) failed:$!";
         push @sockenv, "$path=" . $sock->fileno;
@@ -178,79 +165,40 @@ sub start_server {
         };
     
     # the main loop
-    my $term_signal = 0;
+    my $term_signal;
     $current_worker = _start_worker($opts);
     $update_status->();
-    my $auto_restart_interval = 0;
-    my $last_restart_time = time();
-    my $restart_flag = 0;
     while (1) {
-        my %loaded_env = _reload_env();
-        my @loaded_env_keys = keys %loaded_env;
-        local @ENV{@loaded_env_keys} = map { $loaded_env{$_} } (@loaded_env_keys);
-        if ($ENV{ENABLE_AUTO_RESTART}) {
-            # restart workers periodically
-            $auto_restart_interval = $ENV{AUTO_RESTART_INTERVAL} ||= 360;
-        }
-        sleep(1);
-        my $died_worker = -1;
-        my $status = -1;
-        while (1) {
-            $died_worker = waitpid(-1, WNOHANG);
-            $status = $?;
-            last if ($died_worker <= 0);
+        my @r = wait3(! scalar @signals_received);
+        if (@r) {
+            my ($died_worker, $status) = @r;
             if ($died_worker == $current_worker) {
                 print STDERR "worker $died_worker died unexpectedly with status:$status, restarting\n";
                 $current_worker = _start_worker($opts);
-                $last_restart_time = time();
             } else {
                 print STDERR "old worker $died_worker died, status:$status\n";
                 delete $old_workers{$died_worker};
-                # don't update the status file if restart is scheduled and died_worker is the last one
-                if ($restart_flag == 0 || scalar(keys %old_workers) != 0) {
-                    $update_status->();
-                }
+                $update_status->();
             }
         }
-        if ($auto_restart_interval > 0 && scalar(@signals_received) == 0 &&
-            time() > $last_restart_time + $auto_restart_interval) {
-            print STDERR "autorestart triggered (interval=$auto_restart_interval)\n";
-            $restart_flag = 1;
-            if (time() > $last_restart_time + $auto_restart_interval * 2) {
-                print STDERR "force autorestart triggered\n";
-                $restart_flag = 2;
-            }
-        }
-        my $num_old_workers = scalar(keys %old_workers);
         for (; @signals_received; shift @signals_received) {
             if ($signals_received[0] eq 'HUP') {
-                print STDERR "received HUP (num_old_workers=$num_old_workers)\n";
-                $restart_flag = 1;
+                print STDERR "received HUP, spawning a new worker\n";
+                $old_workers{$current_worker} = $ENV{SERVER_STARTER_GENERATION};
+                $current_worker = _start_worker($opts);
+                $update_status->();
+                print STDERR "new worker is now running, sending $opts->{signal_on_hup} to old workers:";
+                if (%old_workers) {
+                    print STDERR join(',', sort keys %old_workers), "\n";
+                } else {
+                    print STDERR "none\n";
+                }
+                kill $opts->{signal_on_hup}, $_
+                    for sort keys %old_workers;
             } else {
                 $term_signal = $signals_received[0] eq 'TERM' ? $opts->{signal_on_term} : 'TERM';
                 goto CLEANUP;
             }
-        }
-        if ($restart_flag > 1 || ($restart_flag > 0 && $num_old_workers == 0)) {
-            print STDERR "spawning a new worker (num_old_workers=$num_old_workers)\n";
-            $old_workers{$current_worker} = $ENV{SERVER_STARTER_GENERATION};
-            $current_worker = _start_worker($opts);
-            $last_restart_time = time();
-            $restart_flag = 0;
-            $update_status->();
-            print STDERR "new worker is now running, sending $opts->{signal_on_hup} to old workers:";
-            if (%old_workers) {
-                print STDERR join(',', sort keys %old_workers), "\n";
-            } else {
-                print STDERR "none\n";
-            }
-            my $kill_old_delay = $ENV{KILL_OLD_DELAY} || 0;
-            $kill_old_delay ||= 5 if $ENV{ENABLE_AUTO_RESTART};
-            print STDERR "sleep $kill_old_delay secs\n";
-            sleep($kill_old_delay) if $kill_old_delay > 0;
-            print STDERR "killing old workers\n";
-            kill $opts->{signal_on_hup}, $_
-                for sort keys %old_workers;
         }
     }
     
@@ -312,7 +260,7 @@ sub restart_server {
     # wait for the generation
     while (1) {
         my @gens = $get_generations->();
-        last if scalar(@gens) == 1 && $gens[0] >= $wait_for;
+        last if scalar(@gens) == 1 && $gens[0] == $wait_for;
         sleep 1;
     }
 }
@@ -324,21 +272,6 @@ sub server_ports {
         +(split /=/, $_, 2)
     } split /;/, $ENV{SERVER_STARTER_PORT};
     \%ports;
-}
-
-sub _reload_env {
-    my $dn = $ENV{ENVDIR};
-    return if !defined $dn or !-d $dn;
-    my $d;
-    opendir($d, $dn) or return;
-    my %env;
-    while (my $n = readdir($d)) {
-        next if $n =~ /^\./;
-        open my $fh, '<', "$dn/$n" or next;
-        chomp(my $v = <$fh>);
-        $env{$n} = $v if defined $v;
-    }
-    return %env;
 }
 
 sub _start_worker {
