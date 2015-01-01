@@ -43,11 +43,11 @@ for my $signal_on_hup ('TERM', 'USR1') {
             $buf =~ /^(\d+):/;
             my $worker_pid = $1;
             # switch to next gen
-            sleep 2;
+            sleep 3;
             my $status = get_status();
             like(get_status(), qr/^1:\d+\n$/s, 'status before restart');
             kill 'HUP', $server_pid;
-            sleep 3;
+            sleep 2;
             like(get_status(), qr/^1:\d+\n2:\d+$/s, 'status during restart');
             sleep 2;
             like(get_status(), qr/^2:\d+\n$/s, 'status after restart');
