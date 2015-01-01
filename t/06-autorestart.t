@@ -49,9 +49,9 @@ for my $signal_on_hup ('TERM', 'USR1') {
             sleep 2;
             my $status = get_status();
             like(get_status(), qr/^1:\d+\n$/s, 'status before auto-restart');
-            sleep 5;
+            sleep 4; # new worker spawn at 5 (since start, auto_restart_interval(4) + interval(1)), old dies at 7 (5 + interval(1) + kill_old_delay(1))
             like(get_status(), qr/^1:\d+\n2:\d+$/s, 'status during transient state');
-            sleep 4;
+            sleep 2;
             like(get_status(), qr/^2:\d+\n$/s, 'status after auto-restart');
             is(
                 do {
