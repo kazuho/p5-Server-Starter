@@ -34,8 +34,11 @@ sub start_server {
         tr/a-z/A-Z/;
         s/^SIG//i;
     }
-    $opts->{kill_old_delay} = 0
-        if not defined $opts->{kill_old_delay};
+    $opts->{kill_old_delay} = $opts->{enable_auto_restart} ? 5 : 0
+         if not defined $opts->{kill_old_delay};
+    if ($opts->{enable_auto_restart}) {
+        $opts->{auto_restart_interval} ||= 360;
+    }
 
     # prepare args
     my $ports = $opts->{port};
@@ -143,11 +146,11 @@ sub start_server {
     # setup signal handlers
     $SIG{$_} = sub {
         push @signals_received, $_[0];
-    } for (qw/INT TERM HUP/);
+    } for (qw/INT TERM HUP ALRM/);
     $SIG{PIPE} = 'IGNORE';
     
     # setup status monitor
-    my ($current_worker, %old_workers);
+    my ($current_worker, %old_workers, $last_restart_time);
     my $update_status = $opts->{status_file}
         ? sub {
             my $tmpfn = "$opts->{status_file}.$$";
@@ -195,7 +198,22 @@ sub start_server {
         }
         # ready, update the environment
         $current_worker = $pid;
+        $last_restart_time = time;
         $update_status->();
+    };
+
+    # setup the wait function
+    my $wait = sub {
+        my $block = @signals_received == 0;
+        my @r;
+        if ($block && $opts->{enable_auto_restart}) {
+            alarm(1);
+            @r = wait3($block);
+            alarm(0);
+        } else {
+            @r = wait3($block);
+        }
+        return @r;
     };
 
     # setup the cleanup function
@@ -222,8 +240,8 @@ sub start_server {
     # the main loop
     $start_worker->();
     while (1) {
-        # wait for next signal
-        my @r = wait3(! scalar @signals_received);
+        # wait for next signal (or when auto-restart becomes necessary)
+        my @r = $wait->();
         # restart if worker died
         if (@r) {
             my ($died_worker, $status) = @r;
@@ -244,8 +262,16 @@ sub start_server {
                 print STDERR "received HUP, spawning a new worker\n";
                 $restart = 1;
                 last;
+            } elsif ($sig eq 'ALRM') {
+                # skip
             } else {
                 return $cleanup->($sig);
+            }
+        }
+        if (! $restart) {
+            if ($opts->{enable_auto_restart} && $last_restart_time + $opts->{auto_restart_interval} <= time) {
+                print STDERR "autorestart triggered (interval=$opts->{auto_restart_interval})\n";
+                $restart = 1;
             }
         }
         # restart if requested
