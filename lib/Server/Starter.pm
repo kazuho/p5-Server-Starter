@@ -166,13 +166,35 @@ sub start_server {
                 or die "failed to rename $tmpfn to $opts->{status_file}:$!";
         } : sub {
         };
-    
+
+    # setup the cleanup function
+    my $cleanup = sub {
+        my $sig = shift;
+        my $term_signal = $sig eq 'TERM' ? $opts->{signal_on_term} : 'TERM';
+        $old_workers{$current_worker} = $ENV{SERVER_STARTER_GENERATION};
+        undef $current_worker;
+        print STDERR "received $sig, sending $term_signal to all workers:",
+            join(',', sort keys %old_workers), "\n";
+        kill $term_signal, $_
+            for sort keys %old_workers;
+        while (%old_workers) {
+            if (my @r = wait3(1)) {
+                my ($died_worker, $status) = @r;
+                print STDERR "worker $died_worker died, status:$status\n";
+                delete $old_workers{$died_worker};
+                $update_status->();
+            }
+        }
+        print STDERR "exiting\n";
+    };
+
     # the main loop
-    my $term_signal;
     $current_worker = _start_worker($opts);
     $update_status->();
     while (1) {
+        # wait for next signal
         my @r = wait3(! scalar @signals_received);
+        # restart if worker died
         if (@r) {
             my ($died_worker, $status) = @r;
             if ($died_worker == $current_worker) {
@@ -184,51 +206,40 @@ sub start_server {
                 $update_status->();
             }
         }
-        for (; @signals_received; shift @signals_received) {
-            if ($signals_received[0] eq 'HUP') {
+        # handle signals
+        my $restart;
+        while (@signals_received) {
+            my $sig = shift @signals_received;
+            if ($sig eq 'HUP') {
                 print STDERR "received HUP, spawning a new worker\n";
-                $old_workers{$current_worker} = $ENV{SERVER_STARTER_GENERATION};
-                $current_worker = _start_worker($opts);
-                $update_status->();
-                print STDERR "new worker is now running, sending $opts->{signal_on_hup} to old workers:";
-                if (%old_workers) {
-                    print STDERR join(',', sort keys %old_workers), "\n";
-                } else {
-                    print STDERR "none\n";
-                }
-                if ($opts->{kill_old_delay} != 0) {
-                    print STDERR "sleeping $opts->{kill_old_delay} secs before killing old workers\n";
-                    sleep $opts->{kill_old_delay};
-                }
-                print STDERR "killing old workers\n";
-                kill $opts->{signal_on_hup}, $_
-                    for sort keys %old_workers;
+                $restart = 1;
+                last;
             } else {
-                $term_signal = $signals_received[0] eq 'TERM' ? $opts->{signal_on_term} : 'TERM';
-                goto CLEANUP;
+                return $cleanup->($sig);
             }
         }
-    }
-    
- CLEANUP:
-    # cleanup
-    $old_workers{$current_worker} = $ENV{SERVER_STARTER_GENERATION};
-    undef $current_worker;
-
-    print STDERR "received $signals_received[0], sending $term_signal to all workers:",
-        join(',', sort keys %old_workers), "\n";
-    kill $term_signal, $_
-        for sort keys %old_workers;
-    while (%old_workers) {
-        if (my @r = wait3(1)) {
-            my ($died_worker, $status) = @r;
-            print STDERR "worker $died_worker died, status:$status\n";
-            delete $old_workers{$died_worker};
+        # restart if requested
+        if ($restart) {
+            $old_workers{$current_worker} = $ENV{SERVER_STARTER_GENERATION};
+            $current_worker = _start_worker($opts);
             $update_status->();
+            print STDERR "new worker is now running, sending $opts->{signal_on_hup} to old workers:";
+            if (%old_workers) {
+                print STDERR join(',', sort keys %old_workers), "\n";
+            } else {
+                print STDERR "none\n";
+            }
+            if ($opts->{kill_old_delay} != 0) {
+                print STDERR "sleeping $opts->{kill_old_delay} secs before killing old workers\n";
+                sleep $opts->{kill_old_delay};
+            }
+            print STDERR "killing old workers\n";
+            kill $opts->{signal_on_hup}, $_
+                for sort keys %old_workers;
         }
     }
-    
-    print STDERR "exiting\n";
+
+    die "unreachable";
 }
 
 sub restart_server {
