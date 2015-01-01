@@ -34,6 +34,8 @@ sub start_server {
         tr/a-z/A-Z/;
         s/^SIG//i;
     }
+    $opts->{kill_old_delay} = 0
+        if not defined $opts->{kill_old_delay};
 
     # prepare args
     my $ports = $opts->{port};
@@ -194,6 +196,11 @@ sub start_server {
                 } else {
                     print STDERR "none\n";
                 }
+                if ($opts->{kill_old_delay} != 0) {
+                    print STDERR "sleeping $opts->{kill_old_delay} secs before killing old workers\n";
+                    sleep $opts->{kill_old_delay};
+                }
+                print STDERR "killing old workers\n";
                 kill $opts->{signal_on_hup}, $_
                     for sort keys %old_workers;
             } else {
