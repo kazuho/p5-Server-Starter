@@ -24,7 +24,7 @@ for my $signal_on_hup ('TERM', 'USR1') {
                 status_file => "$tempdir/status",
                 enable_auto_restart => 1,
                 auto_restart_interval => 4,
-                kill_old_delay => 1,
+                kill_old_delay => 2,
                 ($signal_on_hup ne 'TERM'
                      ? (signal_on_hup => $signal_on_hup) : ()),
             );
@@ -49,9 +49,9 @@ for my $signal_on_hup ('TERM', 'USR1') {
             sleep 2;
             my $status = get_status();
             like(get_status(), qr/^1:\d+\n$/s, 'status before auto-restart');
-            sleep 4; # new worker spawn at 5 (since start, auto_restart_interval(4) + interval(1)), old dies at 7 (5 + interval(1) + kill_old_delay(1))
+            sleep 5; # new worker spawn at 5 (since start, interval(1) + auto_restart_interval(4)), status updated at 6 (5 + interval(1)), old dies at 9 (6 + kill_old_delay(2) + sleep(1) in the child source code)
             like(get_status(), qr/^1:\d+\n2:\d+$/s, 'status during transient state');
-            sleep 2;
+            sleep 3;
             like(get_status(), qr/^2:\d+\n$/s, 'status after auto-restart');
             is(
                 do {
