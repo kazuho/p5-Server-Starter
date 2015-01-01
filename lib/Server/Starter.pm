@@ -279,9 +279,14 @@ sub start_server {
                 return $cleanup->($sig);
             }
         }
-        if (! $restart) {
-            if ($ENV{ENABLE_AUTO_RESTART} && $last_restart_time + $ENV{AUTO_RESTART_INTERVAL} <= time) {
-                print STDERR "autorestart triggered (interval=$ENV{AUTO_RESTART_INTERVAL})\n";
+        if (! $restart && $ENV{ENABLE_AUTO_RESTART}) {
+            my $auto_restart_interval = $ENV{AUTO_RESTART_INTERVAL};
+            my $elapsed_since_restart = time - $last_restart_time;
+            if ($elapsed_since_restart >= $auto_restart_interval && ! %old_workers) {
+                print STDERR "autorestart triggered (interval=$auto_restart_interval)\n";
+                $restart = 1;
+            } elsif ($elapsed_since_restart >= $auto_restart_interval * 2) {
+                print STDERR "autorestart triggered (forced, interval=$auto_restart_interval)\n";
                 $restart = 1;
             }
         }
