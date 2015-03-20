@@ -396,26 +396,23 @@ sub _set_sighandler {
 
 sub _wait3 {
     my $block = shift;
+    my $pid = -1;
     if ($block) {
         local $@;
-        my @ret = eval {
+        eval {
+            $sighandler_got_sig = 0;
             local $sighandler_should_die = 1;
             die "exit from eval"
                 if $sighandler_got_sig;
-            my $pid = wait();
-            $pid != -1 ? ($pid, $?) : ();
+            $pid = wait();
         };
-        if ($@) {
-            $sighandler_got_sig = 0;
+        if (! defined $pid && $@) {
             $! = Errno::EINTR;
         }
-        return @ret;
     } else {
         my $pid = waitpid(-1, WNOHANG);
-        return ()
-            if $pid <= 0;
-        return ($pid, $?);
     }
+    return $pid > 0 ? ($pid, $?) : ();
 }
 
 1;
