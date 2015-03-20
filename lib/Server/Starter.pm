@@ -403,7 +403,6 @@ sub _wait3 {
             die "exit from eval"
                 if $sighandler_got_sig;
             my $pid = wait();
-warn "returned from wait:$pid";
             $pid != -1 ? ($pid, $?) : ();
         };
         if ($@) {
