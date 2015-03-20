@@ -10,7 +10,6 @@ use IO::Socket::INET;
 use IO::Socket::UNIX;
 use List::MoreUtils qw(uniq);
 use POSIX qw(:sys_wait_h);
-use Proc::Wait3;
 use Scope::Guard;
 
 use Exporter qw(import);
@@ -151,9 +150,9 @@ sub start_server {
     $ENV{SERVER_STARTER_GENERATION} = 0;
     
     # setup signal handlers
-    $SIG{$_} = sub {
+    _set_sighandler($_, sub {
         push @signals_received, $_[0];
-    } for (qw/INT TERM HUP ALRM/);
+    }) for (qw/INT TERM HUP ALRM/);
     $SIG{PIPE} = 'IGNORE';
     
     # setup status monitor
@@ -215,10 +214,10 @@ sub start_server {
         my @r;
         if ($block && $ENV{ENABLE_AUTO_RESTART}) {
             alarm(1);
-            @r = wait3($block);
+            @r = _wait3($block);
             alarm(0);
         } else {
-            @r = wait3($block);
+            @r = _wait3($block);
         }
         return @r;
     };
@@ -234,7 +233,7 @@ sub start_server {
         kill $term_signal, $_
             for sort keys %old_workers;
         while (%old_workers) {
-            if (my @r = wait3(1)) {
+            if (my @r = _wait3(1)) {
                 my ($died_worker, $status) = @r;
                 print STDERR "worker $died_worker died, status:$status\n";
                 delete $old_workers{$died_worker};
@@ -380,6 +379,40 @@ sub _reload_env {
         $env{$n} = $v if defined $v;
     }
     return %env;
+}
+
+our $sighandler_should_die;
+my $sighandler_got_sig;
+
+sub _set_sighandler {
+    my ($sig, $proc) = @_;
+    $SIG{$sig} = sub {
+        $proc->(@_);
+        $sighandler_got_sig = 1;
+        die "got signal"
+            if $sighandler_should_die;
+    };
+}
+
+sub _wait3 {
+    my $block = shift;
+    my $pid = -1;
+    if ($block) {
+        local $@;
+        eval {
+            $sighandler_got_sig = 0;
+            local $sighandler_should_die = 1;
+            die "exit from eval"
+                if $sighandler_got_sig;
+            $pid = wait();
+        };
+        if (! defined $pid && $@) {
+            $! = Errno::EINTR;
+        }
+    } else {
+        my $pid = waitpid(-1, WNOHANG);
+    }
+    return $pid > 0 ? ($pid, $?) : ();
 }
 
 1;
