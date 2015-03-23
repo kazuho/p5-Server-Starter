@@ -4,7 +4,6 @@ name 'Server-Starter';
 all_from 'lib/Server/Starter.pm';
 license 'perl';
 
-requires 'Scope::Guard';
 test_requires 'Test::TCP' => '2.00';
 
 auto_include;

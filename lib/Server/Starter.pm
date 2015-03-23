@@ -9,7 +9,7 @@ use IO::Handle;
 use IO::Socket::INET;
 use IO::Socket::UNIX;
 use POSIX qw(:sys_wait_h);
-use Scope::Guard;
+use Server::Starter::Guard;
 
 use Exporter qw(import);
 
@@ -62,7 +62,7 @@ sub start_server {
             or die "failed to open file:$opts->{pid_file}: $!";
         print $fh "$$\n";
         close $fh;
-        return Scope::Guard->new(
+        return Server::Starter::Guard->new(
             sub {
                 unlink $opts->{pid_file};
             },
@@ -83,7 +83,7 @@ sub start_server {
     }
     
     # create guard that removes the status file
-    my $status_file_guard = $opts->{status_file} && Scope::Guard->new(
+    my $status_file_guard = $opts->{status_file} && Server::Starter::Guard->new(
         sub {
             unlink $opts->{status_file};
         },
@@ -121,7 +121,7 @@ sub start_server {
         push @sockenv, "$port=" . $sock->fileno;
         push @sock, $sock;
     }
-    my $path_remove_guard = Scope::Guard->new(
+    my $path_remove_guard = Server::Starter::Guard->new(
         sub {
             -S $_ and unlink $_
                 for @$paths;
