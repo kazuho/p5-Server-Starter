@@ -8,7 +8,6 @@ use Fcntl;
 use IO::Handle;
 use IO::Socket::INET;
 use IO::Socket::UNIX;
-use List::MoreUtils qw(uniq);
 use POSIX qw(:sys_wait_h);
 use Scope::Guard;
 
@@ -335,7 +334,13 @@ sub restart_server {
     my $get_generations = sub {
         open my $fh, '<', $opts->{status_file}
             or die "failed to open file:$opts->{status_file}:$!";
-        uniq sort { $a <=> $b } map { /^(\d+):/ ? ($1) : () } <$fh>;
+        my %gen;
+        while (my $line = <$fh>) {
+            if ($line =~ /^(\d+):/) {
+                $gen{$1} = 1;
+            }
+        }
+        sort { $a <=> $b } keys %gen;
     };
     
     # wait for this generation
