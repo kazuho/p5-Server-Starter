@@ -52,7 +52,7 @@ test_tcp(
         };
         # Initial worker does not read envdir
         my $buf = $fetch_env->();
-        unlike($buf, qr/^FOO=foo-value1$/m, 'changed env');
+        ok($buf !~ qr/^FOO=foo-value1$/m, 'changed env');
         # rewrite envdir
         open my $envfh, ">", "$tempdir/env/FOO" or die $!;
         print $envfh "foo-value2";
@@ -62,7 +62,7 @@ test_tcp(
         $restart->();
         # new worker reads the rewritten envdir
         $buf = $fetch_env->();
-        like($buf, qr/^FOO=foo-value2$/m, 'changed env');
+        ok($buf =~ /^FOO=foo-value2$/m, 'changed env');
         # remove the env file and check that the removal gets reflected
         unlink "$tempdir/env/FOO"
             or die $!;
@@ -70,7 +70,7 @@ test_tcp(
         $restart->();
         # new worker reads the rewritten envdir
         $buf = $fetch_env->();
-        unlike($buf, qr/^FOO=foo-value2$/m, 'removed env');
+        ok($buf !~ /^FOO=foo-value2$/m, 'removed env');
     },
 );
 
