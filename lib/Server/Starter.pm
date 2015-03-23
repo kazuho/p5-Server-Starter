@@ -406,7 +406,7 @@ sub _wait3 {
                 if $sighandler_got_sig;
             $pid = wait();
         };
-        if (! defined $pid && $@) {
+        if ($pid == -1 && $@) {
             $! = Errno::EINTR;
         }
     } else {
