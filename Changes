@@ -1,5 +1,8 @@
 Revision history for Perl extension Server::Starter.
 
+0.20_01
+	- remove dependency against Proc::Wait3 (#14)
+
 0.19
 	- reimplement changes in 0.15, 0.16 for stability (#13)
 	- update inc/Module/Install
