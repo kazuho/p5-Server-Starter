@@ -6,9 +6,9 @@ use warnings;
 use Carp;
 use Fcntl;
 use IO::Handle;
-use IO::Socket::INET;
 use IO::Socket::UNIX;
 use POSIX qw(:sys_wait_h);
+use Socket ();
 use Server::Starter::Guard;
 
 use Exporter qw(import);
@@ -94,31 +94,31 @@ sub start_server {
     # start listening, setup envvar
     my @sock;
     my @sockenv;
-    for my $port (@$ports) {
-        my $sock;
-        if ($port =~ /^\s*(\d+)\s*$/) {
-            $sock = IO::Socket::INET->new(
-                Listen    => $opts->{backlog},
-                LocalPort => $port,
-                Proto     => 'tcp',
-                ReuseAddr => 1,
-            );
-        } elsif ($port =~ /^\s*(.*)\s*:\s*(\d+)\s*$/) {
-            $port = "$1:$2";
-            $sock = IO::Socket::INET->new(
-                Listen    => $opts->{backlog},
-                LocalAddr => $port,
-                Proto     => 'tcp',
-                ReuseAddr => 1,
-            );
+    for my $hostport (@$ports) {
+        my ($domain, $sa);
+        if ($hostport =~ /^\s*(\d+)\s*$/) {
+            $hostport = $1;
+            $domain = Socket::PF_INET;
+            $sa = pack_sockaddr_in $1, Socket::inet_aton("0.0.0.0");
+        } elsif ($hostport =~ /^\s*(.*)\s*:\s*(\d+)\s*$/) {
+            my ($host, $port) = ($1, $2);
+            $domain = Socket::PF_INET;
+            $hostport = "$host:$port";
+            my $addr = gethostbyname $host
+                or die "failed to resolve host:$host:$!";
+            $sa = Socket::pack_sockaddr_in($port, $addr);
         } else {
-            croak "invalid ``port'' value:$port\n"
+            croak "invalid ``port'' value:$hostport\n"
         }
-        die "failed to listen to $port:$!"
-            unless $sock;
+        socket my $sock, $domain, SOCK_STREAM, 0
+            or die "failed to create socket:$!";
+        bind $sock, $sa
+            or die "failed to bind to $hostport:$!";
+        listen $sock, $opts->{backlog}
+            or die "listen(2) failed:$!";
         fcntl($sock, F_SETFD, my $flags = '')
                 or die "fcntl(F_SETFD, 0) failed:$!";
-        push @sockenv, "$port=" . $sock->fileno;
+        push @sockenv, "$hostport=" . $sock->fileno;
         push @sock, $sock;
     }
     my $path_remove_guard = Server::Starter::Guard->new(
