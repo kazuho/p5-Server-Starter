@@ -97,16 +97,27 @@ sub start_server {
     for my $hostport (@$ports) {
         my ($domain, $sa);
         if ($hostport =~ /^\s*(\d+)\s*$/) {
+            # by default, only bind to IPv4 (for compatibility)
             $hostport = $1;
             $domain = Socket::PF_INET;
             $sa = pack_sockaddr_in $1, Socket::inet_aton("0.0.0.0");
-        } elsif ($hostport =~ /^\s*(.*)\s*:\s*(\d+)\s*$/) {
+        } elsif ($hostport =~ /^\s*(?:\[\s*|)([^\]]*)\s*(?:\]\s*|):\s*(\d+)\s*$/) {
             my ($host, $port) = ($1, $2);
-            $domain = Socket::PF_INET;
-            $hostport = "$host:$port";
-            my $addr = gethostbyname $host
-                or die "failed to resolve host:$host:$!";
-            $sa = Socket::pack_sockaddr_in($port, $addr);
+            if ($host =~ /:/) {
+                # IPv6
+                $domain = Socket::PF_INET6;
+                $hostport = "[$host]:$port";
+                my $addr = Socket::inet_pton(Socket::AF_INET6, $host)
+                    or die "failed to resolve host:$host:$!";
+                $sa = Socket::pack_sockaddr_in6($port, $addr);
+            } else {
+                # IPv4
+                $domain = Socket::PF_INET;
+                $hostport = "$host:$port";
+                my $addr = gethostbyname $host
+                    or die "failed to resolve host:$host:$!";
+                $sa = Socket::pack_sockaddr_in($port, $addr);
+            }
         } else {
             croak "invalid ``port'' value:$hostport\n"
         }
