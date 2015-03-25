@@ -13,7 +13,7 @@ use Server::Starter::Guard;
 
 use Exporter qw(import);
 
-our $VERSION = '0.21';
+our $VERSION = '0.22';
 our @EXPORT_OK = qw(start_server restart_server server_ports);
 
 my @signals_received;

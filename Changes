@@ -1,5 +1,9 @@
 Revision history for Perl extension Server::Starter.
 
+0.22
+	- support for IPv6 (#16)
+	- include repository URL in META.yml (#15; thanks to ether)
+
 0.21
 	- remove dependency against non-standard modules (#14)
 
