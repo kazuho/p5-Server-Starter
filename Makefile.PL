@@ -8,6 +8,7 @@ test_requires 'Test::TCP' => '2.00';
 
 auto_include;
 auto_install;
+auto_set_repository;
 
 install_script 'start_server';
 
