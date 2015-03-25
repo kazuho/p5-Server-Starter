@@ -105,11 +105,17 @@ sub start_server {
             my ($host, $port) = ($1, $2);
             if ($host =~ /:/) {
                 # IPv6
-                $domain = Socket::PF_INET6;
-                $hostport = "[$host]:$port";
-                my $addr = Socket::inet_pton(Socket::AF_INET6, $host)
-                    or die "failed to resolve host:$host:$!";
-                $sa = Socket::pack_sockaddr_in6($port, $addr);
+                local $@;
+                eval {
+                    $hostport = "[$host]:$port";
+                    my $addr = Socket::inet_pton(Socket::AF_INET6, $host)
+                        or die "failed to resolve host:$host:$!";
+                    $sa = Socket::pack_sockaddr_in6($port, $addr);
+                    $domain = Socket::PF_INET6;
+                };
+                if ($@) {
+                    die "No support for IPv6. Please update Perl (or Perl modules)";
+                }
             } else {
                 # IPv4
                 $domain = Socket::PF_INET;
