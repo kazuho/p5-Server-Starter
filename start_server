@@ -70,6 +70,9 @@ This script is a frontend of L<Server::Starter>.  For more information please re
 
 TCP port to listen to (if omitted, will not bind to any ports)
 
+If host is not specified, then the program will bind to the default address of IPv4 ("0.0.0.0").
+Square brackets should be used to specify an IPv6 address (e.g. --port=[::1]:8080)
+
 =head2 --path=path
 
 path at where to listen using unix socket (optional)
@@ -124,6 +127,7 @@ This can be overwritten by environment variable C<KILL_OLD_DELAY>.
 this is a wrapper command that reads the pid of the start_server process from --pid-file, sends SIGHUP to the process and waits until the server(s) of the older generation(s) die by monitoring the contents of the --status-file
 
 =head2 --backlog
+
 specifies a listen backlog parameter, whose default is SOMAXCONN (usually 128 on Linux). While SOMAXCONN is enough for most loads, large backlog is required for heavy loads.
 
 =head2 --help
