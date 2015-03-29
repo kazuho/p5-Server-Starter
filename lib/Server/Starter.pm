@@ -96,6 +96,7 @@ sub start_server {
     my @sockenv;
     for my $hostport (@$ports) {
         my ($domain, $sa);
+        my $sockopts = sub {};
         if ($hostport =~ /^\s*(\d+)\s*$/) {
             # by default, only bind to IPv4 (for compatibility)
             $hostport = $1;
@@ -108,14 +109,21 @@ sub start_server {
                 local $@;
                 eval {
                     $hostport = "[$host]:$port";
-                    my $addr = Socket::inet_pton(Socket::AF_INET6, $host)
+                    my $addr = Socket::inet_pton(Socket::AF_INET6(), $host)
                         or die "failed to resolve host:$host:$!";
                     $sa = Socket::pack_sockaddr_in6($port, $addr);
-                    $domain = Socket::PF_INET6;
+                    $domain = Socket::PF_INET6();
                 };
                 if ($@) {
                     die "No support for IPv6. Please update Perl (or Perl modules)";
                 }
+                $sockopts = sub {
+                    my $sock = shift;
+                    local $@;
+                    eval {
+                        setsockopt $sock, Socket::IPPROTO_IPV6(), Socket::IPV6_V6ONLY(), 1;
+                    };
+                };
             } else {
                 # IPv4
                 $domain = Socket::PF_INET;
@@ -129,6 +137,7 @@ sub start_server {
         }
         socket my $sock, $domain, SOCK_STREAM, 0
             or die "failed to create socket:$!";
+        $sockopts->($sock);
         bind $sock, $sa
             or die "failed to bind to $hostport:$!";
         listen $sock, $opts->{backlog}
