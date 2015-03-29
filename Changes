@@ -1,5 +1,8 @@
 Revision history for Perl extension Server::Starter.
 
+0.23
+	- set IPV6_V6ONLY for socket bound to an IPv6 address (#16)
+
 0.22
 	- support for IPv6 (#16)
 	- include repository URL in META.yml (#15; thanks to ether)
