@@ -70,16 +70,10 @@ sub start_server {
     }->();
     
     # open log file
+    my $logfh;
     if ($opts->{log_file}) {
-        open my $fh, '>>', $opts->{log_file}
+        open $logfh, '>>', $opts->{log_file}
             or die "failed to open log file:$opts->{log_file}: $!";
-        STDOUT->flush;
-        STDERR->flush;
-        open STDOUT, '>&', $fh
-            or die "failed to dup STDOUT to file: $!";
-        open STDERR, '>&', $fh
-            or die "failed to dup STDERR to file: $!";
-        close $fh;
     }
     
     # create guard that removes the status file
@@ -200,6 +194,18 @@ sub start_server {
                 or die "failed to rename $tmpfn to $opts->{status_file}:$!";
         } : sub {
         };
+
+    # now that setup is complete, redirect outputs to the log file (if specified)
+    if ($logfh) {
+        STDOUT->flush;
+        STDERR->flush;
+        open STDOUT, '>&', $logfh
+            or die "failed to dup STDOUT to file: $!";
+        open STDERR, '>&', $logfh
+            or die "failed to dup STDERR to file: $!";
+        close $logfh;
+        undef $logfh;
+    }
 
     # setup the start_worker function
     my $start_worker = sub {
