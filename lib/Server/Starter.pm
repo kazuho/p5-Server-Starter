@@ -441,7 +441,7 @@ sub _wait3 {
             $! = Errno::EINTR;
         }
     } else {
-        my $pid = waitpid(-1, WNOHANG);
+        $pid = waitpid(-1, WNOHANG);
     }
     return $pid > 0 ? ($pid, $?) : ();
 }
