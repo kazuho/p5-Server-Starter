@@ -55,31 +55,18 @@ sub start_server {
     $ENV{AUTO_RESTART_INTERVAL} = $opts->{auto_restart_interval}
         if defined $opts->{auto_restart_interval};
 
-    # open pid file
-    my $pid_file_guard = sub {
-        return unless $opts->{pid_file};
-        open my $fh, '>', $opts->{pid_file}
-            or die "failed to open file:$opts->{pid_file}: $!";
-        print $fh "$$\n";
-        close $fh;
-        return Server::Starter::Guard->new(
-            sub {
-                unlink $opts->{pid_file};
-            },
-        );
-    }->();
-    
     # open log file
+    my $logfh;
     if ($opts->{log_file}) {
-        open my $fh, '>>', $opts->{log_file}
-            or die "failed to open log file:$opts->{log_file}: $!";
-        STDOUT->flush;
-        STDERR->flush;
-        open STDOUT, '>&', $fh
-            or die "failed to dup STDOUT to file: $!";
-        open STDERR, '>&', $fh
-            or die "failed to dup STDERR to file: $!";
-        close $fh;
+        if ($opts->{log_file} =~ /^\s*\|\s*/s) {
+            my $cmd = $';
+            open $logfh, '|-', $cmd
+                or die "failed to open pipe:$opts->{log_file}: $!";
+        } else {
+            open $logfh, '>>', $opts->{log_file}
+                or die "failed to open log file:$opts->{log_file}: $!";
+        }
+        $logfh->autoflush(1);
     }
     
     # create guard that removes the status file
@@ -200,6 +187,51 @@ sub start_server {
                 or die "failed to rename $tmpfn to $opts->{status_file}:$!";
         } : sub {
         };
+
+    # now that setup is complete, redirect outputs to the log file (if specified)
+    if ($logfh) {
+        STDOUT->flush;
+        STDERR->flush;
+        open STDOUT, '>&=', $logfh
+            or die "failed to dup STDOUT to file: $!";
+        open STDERR, '>&=', $logfh
+            or die "failed to dup STDERR to file: $!";
+        close $logfh;
+        undef $logfh;
+    }
+
+    # daemonize
+    if ($opts->{daemonize}) {
+        my $pid = fork;
+        die "fork failed:$!"
+            unless defined $pid;
+        if ($pid != 0) {
+            exit 0;
+        }
+        # in child process
+        POSIX::setsid();
+        $pid = fork;
+        die "fork failed:$!"
+            unless defined $pid;
+        if ($pid != 0) {
+            exit 0;
+        }
+        close STDIN;
+    }
+
+    # open pid file
+    my $pid_file_guard = sub {
+        return unless $opts->{pid_file};
+        open my $fh, '>', $opts->{pid_file}
+            or die "failed to open file:$opts->{pid_file}: $!";
+        print $fh "$$\n";
+        close $fh;
+        return Server::Starter::Guard->new(
+            sub {
+                unlink $opts->{pid_file};
+            },
+        );
+    }->();
 
     # setup the start_worker function
     my $start_worker = sub {
