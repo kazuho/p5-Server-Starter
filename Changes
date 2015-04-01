@@ -1,5 +1,9 @@
 Revision history for Perl extension Server::Starter.
 
+0.24
+	- introduce --daemonize option (#18 #6)
+	- fix bug that causes a infinite loop in shutdown (amends #14)
+
 0.23
 	- set IPV6_V6ONLY for socket bound to an IPv6 address (#16)
 
