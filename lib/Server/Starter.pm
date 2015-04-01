@@ -214,6 +214,25 @@ sub start_server {
         undef $logfh;
     }
 
+    # daemonize
+    if ($opts->{daemonize}) {
+        my $pid = fork;
+        die "fork failed:$!"
+            unless defined $pid;
+        if ($pid != 0) {
+            exit 0;
+        }
+        # in child process
+        POSIX::setsid();
+        $pid = fork;
+        die "fork failed:$!"
+            unless defined $pid;
+        if ($pid != 0) {
+            exit 0;
+        }
+        close STDIN;
+    }
+
     # setup the start_worker function
     my $start_worker = sub {
         my $pid;

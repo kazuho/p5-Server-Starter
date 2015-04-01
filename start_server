@@ -21,7 +21,7 @@ GetOptions(
             ref($opts{$name}) ? $opts{$name} : \$opts{$name};
         },
     } qw(port=s path=s interval=i log-file=s pid-file=s dir=s signal-on-hup=s signal-on-term=s
-         backlog=i envdir=s enable-auto-restart=i auto-restart-interval=i kill-old-delay=i
+         backlog=i envdir=s enable-auto-restart=i daemonize auto-restart-interval=i kill-old-delay=i
          status-file=s restart help version),
 ) or exit 1;
 pod2usage(
@@ -36,6 +36,11 @@ if ($opts{version}) {
 if ($opts{restart}) {
     restart_server(%opts);
     exit 0;
+}
+
+if ($opts{daemonize}) {
+    die "Usage: --log-file option must be specified together with --deamonize\n"
+        unless defined $opts{log_file};
 }
 
 # validate options
@@ -113,6 +118,10 @@ This can be overwritten by environment variable C<ENVDIR>.
 
 if set, redirects STDOUT and STDERR to given file or command
 
+=head2 --daemonize
+
+deamonizes the server (by doing fork,setsid,fork).  Must be used together with C<--log-file>.
+
 =head2 --enable-auto-restart
 
 enables automatic restart by time.
@@ -128,13 +137,14 @@ This can be overwritten by environment variable C<AUTO_RESTART_INTERVAL>.
 time to suspend to send a signal to the old worker. The default value is 5 when C<--enable-auto-restart> is set, 0 otherwise.
 This can be overwritten by environment variable C<KILL_OLD_DELAY>.
 
+=head2 --backlog=size
+
+specifies a listen backlog parameter, whose default is SOMAXCONN (usually 128 on Linux). While SOMAXCONN is enough for most loads, large backlog is required for heavy loads.
+
 =head2 --restart
 
 this is a wrapper command that reads the pid of the start_server process from --pid-file, sends SIGHUP to the process and waits until the server(s) of the older generation(s) die by monitoring the contents of the --status-file
 
-=head2 --backlog
-
-specifies a listen backlog parameter, whose default is SOMAXCONN (usually 128 on Linux). While SOMAXCONN is enough for most loads, large backlog is required for heavy loads.
 
 =head2 --help
 
