@@ -107,6 +107,12 @@ directory that contains environment variables to the server processes.
 It is intended for use with C<envdir> in C<daemontools>.
 This can be overwritten by environment variable C<ENVDIR>.
 
+=head2 --log-file=file
+
+=head2 --log-file="| cmd args..."
+
+if set, redirects STDOUT and STDERR to given file or command
+
 =head2 --enable-auto-restart
 
 enables automatic restart by time.
