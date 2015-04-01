@@ -55,20 +55,6 @@ sub start_server {
     $ENV{AUTO_RESTART_INTERVAL} = $opts->{auto_restart_interval}
         if defined $opts->{auto_restart_interval};
 
-    # open pid file
-    my $pid_file_guard = sub {
-        return unless $opts->{pid_file};
-        open my $fh, '>', $opts->{pid_file}
-            or die "failed to open file:$opts->{pid_file}: $!";
-        print $fh "$$\n";
-        close $fh;
-        return Server::Starter::Guard->new(
-            sub {
-                unlink $opts->{pid_file};
-            },
-        );
-    }->();
-    
     # open log file
     my $logfh;
     if ($opts->{log_file}) {
@@ -232,6 +218,20 @@ sub start_server {
         }
         close STDIN;
     }
+
+    # open pid file
+    my $pid_file_guard = sub {
+        return unless $opts->{pid_file};
+        open my $fh, '>', $opts->{pid_file}
+            or die "failed to open file:$opts->{pid_file}: $!";
+        print $fh "$$\n";
+        close $fh;
+        return Server::Starter::Guard->new(
+            sub {
+                unlink $opts->{pid_file};
+            },
+        );
+    }->();
 
     # setup the start_worker function
     my $start_worker = sub {
