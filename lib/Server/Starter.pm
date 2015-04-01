@@ -72,8 +72,15 @@ sub start_server {
     # open log file
     my $logfh;
     if ($opts->{log_file}) {
-        open $logfh, '>>', $opts->{log_file}
-            or die "failed to open log file:$opts->{log_file}: $!";
+        if ($opts->{log_file} =~ /^\s*\|\s*/s) {
+            my $cmd = $';
+            open $logfh, '|-', $cmd
+                or die "failed to open pipe:$opts->{log_file}: $!";
+        } else {
+            open $logfh, '>>', $opts->{log_file}
+                or die "failed to open log file:$opts->{log_file}: $!";
+        }
+        $logfh->autoflush(1);
     }
     
     # create guard that removes the status file
@@ -199,9 +206,9 @@ sub start_server {
     if ($logfh) {
         STDOUT->flush;
         STDERR->flush;
-        open STDOUT, '>&', $logfh
+        open STDOUT, '>&=', $logfh
             or die "failed to dup STDOUT to file: $!";
-        open STDERR, '>&', $logfh
+        open STDERR, '>&=', $logfh
             or die "failed to dup STDERR to file: $!";
         close $logfh;
         undef $logfh;
