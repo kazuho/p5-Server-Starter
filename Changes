@@ -1,5 +1,9 @@
 Revision history for Perl extension Server::Starter.
 
+0.25
+	- fix `already in use` error if the program is restarted (regression in 0.21) #18
+	- tests now pass on environments wo. IPv6 support #19
+
 0.24
 	- introduce --daemonize option (#18 #6)
 	- fix bug that causes a infinite loop in shutdown (amends #14)
