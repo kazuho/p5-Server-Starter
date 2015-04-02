@@ -122,8 +122,9 @@ sub start_server {
         } else {
             croak "invalid ``port'' value:$hostport\n"
         }
-        socket my $sock, $domain, SOCK_STREAM, 0
+        socket my $sock, $domain, Socket::SOCK_STREAM(), 0
             or die "failed to create socket:$!";
+        setsockopt $sock, Socket::SOL_SOCKET, Socket::SO_REUSEADDR(), pack("l", 1);
         $sockopts->($sock);
         bind $sock, $sa
             or die "failed to bind to $hostport:$!";
