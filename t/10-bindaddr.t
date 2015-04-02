@@ -2,8 +2,11 @@ use strict;
 use warnings;
 use Test::More;
 use Test::Requires qw(IO::Socket::IP);
-use Net::EmptyPort qw(empty_port);
+use Net::EmptyPort qw(can_bind empty_port);
 use Server::Starter qw(start_server);
+
+plan skip_all => 'IPv6 not available'
+    unless can_bind('::1');
 
 my $port = empty_port;
 

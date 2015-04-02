@@ -7,7 +7,7 @@ license 'perl';
 test_requires 'IO::Socket::IP';
 test_requires 'Net::EmptyPort';
 test_requires 'Test::SharedFork';
-test_requires 'Test::TCP' => '2.00';
+test_requires 'Test::TCP' => '2.08';
 
 auto_include;
 auto_install;
