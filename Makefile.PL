@@ -12,6 +12,7 @@ test_requires 'Test::TCP' => '2.08';
 auto_include;
 auto_install;
 auto_set_repository;
+auto_license;
 
 install_script 'start_server';
 
