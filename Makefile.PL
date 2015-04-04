@@ -14,6 +14,7 @@ auto_include;
 auto_install;
 auto_set_repository;
 auto_license;
+auto_provides;
 
 install_script 'start_server';
 
