@@ -10,6 +10,9 @@ _build/
 xshelper.h
 META.yml
 MYMETA.yml
+MYMETA.json
+MANIFEST
+MANIFEST.bak
 .online
 blib/
 pm_to_blib
@@ -17,3 +20,4 @@ nytprof*
 core
 perltidy.ERR
 tmp/
+Server-Starter-*.tar.gz
