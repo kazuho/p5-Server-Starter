@@ -4,7 +4,7 @@ name 'Server-Starter';
 all_from 'lib/Server/Starter.pm';
 license 'perl';
 
-test_requires 'Test::Requires' => '0.08';
+test_requires 'Test::Requires';
 test_requires 'IO::Socket::IP';
 test_requires 'Net::EmptyPort';
 test_requires 'Test::SharedFork';
