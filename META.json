@@ -1,0 +1,86 @@
+{
+   "abstract" : "a superdaemon for hot-deploying server programs",
+   "author" : [
+      "Kazuho Oku"
+   ],
+   "dynamic_config" : 0,
+   "generated_by" : "Minilla/v2.3.0, CPAN::Meta::Converter version 2.150001",
+   "license" : [
+      "perl_5"
+   ],
+   "meta-spec" : {
+      "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
+      "version" : "2"
+   },
+   "name" : "Server-Starter",
+   "no_index" : {
+      "directory" : [
+         "t",
+         "xt",
+         "inc",
+         "share",
+         "eg",
+         "examples",
+         "author",
+         "builder"
+      ]
+   },
+   "prereqs" : {
+      "configure" : {
+         "requires" : {
+            "Module::Build" : "0.38"
+         }
+      },
+      "develop" : {
+         "requires" : {
+            "Test::CPAN::Meta" : "0",
+            "Test::MinimumVersion::Fast" : "0.04",
+            "Test::PAUSE::Permissions" : "0.04",
+            "Test::Pod" : "1.41",
+            "Test::Spellunker" : "v0.2.7"
+         }
+      },
+      "runtime" : {
+         "requires" : {
+            "perl" : "5.008"
+         }
+      },
+      "test" : {
+         "requires" : {
+            "IO::Socket::IP" : "0",
+            "Net::EmptyPort" : "0",
+            "Test::Requires" : "0",
+            "Test::SharedFork" : "0",
+            "Test::TCP" : "2.08"
+         }
+      }
+   },
+   "release_status" : "unstable",
+   "resources" : {
+      "bugtracker" : {
+         "web" : "https://github.com/kazuho/p5-Server-Starter/issues"
+      },
+      "homepage" : "https://github.com/kazuho/p5-Server-Starter",
+      "repository" : {
+         "type" : "git",
+         "url" : "git://github.com/kazuho/p5-Server-Starter.git",
+         "web" : "https://github.com/kazuho/p5-Server-Starter"
+      }
+   },
+   "version" : "0.26",
+   "x_contributors" : [
+      "kazuho <kazuho@d0d07461-0603-4401-acd4-de1884942a52>",
+      "yappo <yappo@d0d07461-0603-4401-acd4-de1884942a52>",
+      "Robert Buels <rmb32@cornell.edu>",
+      "chromatic <chromatic@wgz.org>",
+      "Chia-liang Kao <clkao@clkao.org>",
+      "Masahiro Nagano <kazeburo@gmail.com>",
+      "Tomoya Kabe <kabe.tomoya@O-02586-MAC.local>",
+      "Haruka Iwao <haruka@fout.jp>",
+      "Kazuho Oku <kazuho@natadeco.co>",
+      "Karen Etheridge <ether@cpan.org>",
+      "Bugdebugger <bugdebugger@users.noreply.github.com>",
+      "Kazuho Oku <kazuhooku@gmail.com>",
+      "Tatsuhiko Miyagawa <miyagawa@bulknews.net>"
+   ]
+}

@@ -21,3 +21,11 @@ core
 perltidy.ERR
 tmp/
 Server-Starter-*.tar.gz
+/Server-Starter-*
+/.build
+/_build_params
+/Build
+/Build.bat
+!Build/
+!META.json
+!LICENSE
