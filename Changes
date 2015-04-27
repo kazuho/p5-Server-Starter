@@ -1,5 +1,7 @@
 Revision history for Perl extension Server::Starter.
 
+{{$NEXT}}
+
 0.26
 	- `start_server` command uses perl found in $PATH instead of /usr/bin/perl #21
 
