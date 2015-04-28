@@ -2,6 +2,7 @@ Makefile
 inc/
 .c
 ppport.h
+.DS_Store
 .*.sw[pon]
 *.bak
 *.old
