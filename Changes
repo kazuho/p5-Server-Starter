@@ -2,6 +2,9 @@ Revision history for Perl extension Server::Starter.
 
 {{$NEXT}}
 
+0.28 2015-05-28T22:08:37Z
+	- add `--port=[host:]port=fd` option for specifying the file descriptor number (thanks to tokuhirom) #24
+
 0.27 2015-04-28T01:02:28Z
 	- revert 0.26 so that the install script can update the shebang (thanks to miyagawa) #22
 	- modernize the build tool (thanks to miyagawa) #23
