@@ -85,13 +85,13 @@ sub start_server {
         my ($domain, $sa);
         my $fd;
         my $sockopts = sub {};
-        if ($hostport =~ /^\s*(\d+)(?:\s*:(\d+))?\s*$/) {
+        if ($hostport =~ /^\s*(\d+)(?:\s*=(\d+))?\s*$/) {
             # by default, only bind to IPv4 (for compatibility)
             $hostport = $1;
             $fd = $2;
             $domain = Socket::PF_INET;
             $sa = pack_sockaddr_in $1, Socket::inet_aton("0.0.0.0");
-        } elsif ($hostport =~ /^\s*(?:\[\s*|)([^\]]*)\s*(?:\]\s*|):\s*(\d+)(?:\s*:(\d+))?\s*$/) {
+        } elsif ($hostport =~ /^\s*(?:\[\s*|)([^\]]*)\s*(?:\]\s*|):\s*(\d+)(?:\s*=(\d+))?\s*$/) {
             my ($host, $port) = ($1, $2);
             $fd = $3;
             if ($host =~ /:/) {

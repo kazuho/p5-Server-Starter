@@ -71,7 +71,7 @@ This script is a frontend of L<Server::Starter>.  For more information please re
 
 =head1 OPTIONS
 
-=head2 --port=(port|host:port|port:fd|host:port:fd)
+=head2 --port=(port|host:port|port=fd|host:port=fd)
 
 TCP port to listen to (if omitted, will not bind to any ports)
 

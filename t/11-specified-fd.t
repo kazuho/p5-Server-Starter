@@ -13,7 +13,7 @@ test_tcp(
     server => sub {
         my $port = shift;
         start_server(
-            port        => "$port:0",
+            port        => "$port=0",
             exec        => [
                 $^X, qw(t/11-specified-fd-server.pl)
             ],
