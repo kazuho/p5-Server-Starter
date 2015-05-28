@@ -83,14 +83,17 @@ sub start_server {
     my @sockenv;
     for my $hostport (@$ports) {
         my ($domain, $sa);
+        my $fd;
         my $sockopts = sub {};
-        if ($hostport =~ /^\s*(\d+)\s*$/) {
+        if ($hostport =~ /^\s*(\d+)(?:\s*:(\d+))?\s*$/) {
             # by default, only bind to IPv4 (for compatibility)
             $hostport = $1;
+            $fd = $2;
             $domain = Socket::PF_INET;
             $sa = pack_sockaddr_in $1, Socket::inet_aton("0.0.0.0");
-        } elsif ($hostport =~ /^\s*(?:\[\s*|)([^\]]*)\s*(?:\]\s*|):\s*(\d+)\s*$/) {
+        } elsif ($hostport =~ /^\s*(?:\[\s*|)([^\]]*)\s*(?:\]\s*|):\s*(\d+)(?:\s*:(\d+))?\s*$/) {
             my ($host, $port) = ($1, $2);
+            $fd = $3;
             if ($host =~ /:/) {
                 # IPv6
                 local $@;
@@ -132,6 +135,11 @@ sub start_server {
             or die "listen(2) failed:$!";
         fcntl($sock, F_SETFD, my $flags = '')
                 or die "fcntl(F_SETFD, 0) failed:$!";
+        if (defined $fd) {
+            POSIX::dup2($sock->fileno, $fd)
+                or die "dup2(2) failed(${fd}): $!";
+            print STDERR "socket is duplicated to file descriptor ${fd}\n";
+        }
         push @sockenv, "$hostport=" . $sock->fileno;
         push @sock, $sock;
     }
