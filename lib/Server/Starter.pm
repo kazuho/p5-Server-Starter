@@ -139,8 +139,11 @@ sub start_server {
             POSIX::dup2($sock->fileno, $fd)
                 or die "dup2(2) failed(${fd}): $!";
             print STDERR "socket is duplicated to file descriptor ${fd}\n";
+            close $sock;
+            push @sockenv, "$hostport=$fd";
+        } else {
+            push @sockenv, "$hostport=" . $sock->fileno;
         }
-        push @sockenv, "$hostport=" . $sock->fileno;
         push @sock, $sock;
     }
     my $path_remove_guard = Server::Starter::Guard->new(
