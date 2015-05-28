@@ -78,7 +78,7 @@ TCP port to listen to (if omitted, will not bind to any ports)
 If host is not specified, then the program will bind to the default address of IPv4 ("0.0.0.0").
 Square brackets should be used to specify an IPv6 address (e.g. --port=[::1]:8080)
 
-If fd is specified, then start_server duplicates socket file descriptor to fd.
+If fd is specified, then start_server allocates the socket at the given number.
 
 =head2 --path=path
 
