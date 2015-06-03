@@ -231,6 +231,8 @@ sub start_server {
         # do not close STDIN if `--port=n=0`.
         unless (grep /=0$/, @sockenv) {
             close STDIN;
+            open STDIN, '<', '/dev/null'
+                or die "reopen failed: $!";
         }
     }
 
