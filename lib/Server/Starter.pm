@@ -228,7 +228,10 @@ sub start_server {
         if ($pid != 0) {
             exit 0;
         }
-        close STDIN;
+        # do not close STDIN if `--port=n=0`.
+        unless (grep /=0$/, @sockenv) {
+            close STDIN;
+        }
     }
 
     # open pid file
