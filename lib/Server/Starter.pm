@@ -10,6 +10,7 @@ use IO::Socket::UNIX;
 use POSIX qw(:sys_wait_h);
 use Socket ();
 use Server::Starter::Guard;
+use Fcntl qw(:flock);
 
 use Exporter qw(import);
 
@@ -226,6 +227,7 @@ sub start_server {
         die "fork failed:$!"
             unless defined $pid;
         if ($pid != 0) {
+            print STDERR "start_server (pid:$$) spawned daemon process (pid: $pid)...\n";
             exit 0;
         }
         close STDIN;
@@ -237,10 +239,13 @@ sub start_server {
         open my $fh, '>', $opts->{pid_file}
             or die "failed to open file:$opts->{pid_file}: $!";
         print $fh "$$\n";
-        close $fh;
+        flock($fh, LOCK_EX)
+            or die "flock failed($opts->{pid_file}): $!";
         return Server::Starter::Guard->new(
             sub {
-                unlink $opts->{pid_file};
+                unlink $opts->{pid_file}
+                    or warn "failed to unlink file:$opts->{pid_file}:$!";
+                close $fh;
             },
         );
     }->();
@@ -440,23 +445,24 @@ sub stop_server {
         unless $opts->{pid_file};
 
     # get pid
+    open my $fh, '<', $opts->{pid_file}
+        or die "failed to open file:$opts->{pid_file}:$!";
     my $pid = do {
-        open my $fh, '<', $opts->{pid_file}
-            or die "failed to open file:$opts->{pid_file}:$!";
         my $line = <$fh>;
         chomp $line;
         $line;
     };
+
+    print STDERR "stop_server (pid:$$) stopping now (pid:$pid)...\n";
 
     # send TERM
     kill 'TERM', $pid
         or die "failed to send SIGTERM to the server process:$!";
 
     # wait process
-    while (1) {
-        last if kill(0, $pid) == 0;
-        sleep 1;
-    }
+    flock($fh, LOCK_EX)
+        or die "flock failed($opts->{pid_file}): $!";
+    close $fh;
 }
 
 sub server_ports {

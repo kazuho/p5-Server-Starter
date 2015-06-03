@@ -3,36 +3,37 @@ use warnings;
 use utf8;
 use Test::More;
 use Server::Starter qw(start_server restart_server stop_server); 
-use File::Temp;
+use File::Temp qw(tempdir);
 use Test::TCP;
 
 plan tests => 2;
 
-my $tmpfile = File::Temp->new(UNLINK => 1);
+my $dir = tempdir( CLEANUP => 1 );
+my $pidfile = "$dir/pid";
 
 test_tcp(
    server => sub {
         my $port = shift;
 
         start_server(
-            pid_file => $tmpfile->filename,
+            pid_file  => $pidfile,
             daemonize => 1,
-            port => $port,
-            exec => [$^X, 't/11-stop-server.pl'],
+            port      => $port,
+            exec      => [ $^X, 't/11-stop-server.pl' ],
         );
         exit 0;
     },
     client => sub {
         my $port = shift;
 
-        while (!-s $tmpfile) {
+        while (!-s $pidfile) {
             note 'pid file is not available';
             sleep 1; # wait pid file
         }
 
         my $pid = do {
-            open my $fh, '<', $tmpfile
-                or die "Cannot open $tmpfile: $!";
+            open my $fh, '<', $pidfile
+                or die "Cannot open $pidfile: $!";
             local $/;
             <$fh>;
         };
@@ -40,10 +41,10 @@ test_tcp(
         is(kill(0, $pid), 1, 'there is a process');
 
         stop_server(
-            pid_file => $tmpfile->filename,
+            pid_file => $pidfile,
             port => $port,
         );
-        is(kill(0, $pid), 0, 'process was killed');
+        ok((!-e $pidfile), 'pid file was unlinked');
     },
 );
 
