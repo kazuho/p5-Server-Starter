@@ -5,7 +5,7 @@ use warnings;
 
 use Getopt::Long;
 use Pod::Usage;
-use Server::Starter qw(start_server restart_server);
+use Server::Starter qw(start_server restart_server stop_server);
 
 my %opts = (
     port => [],
@@ -22,7 +22,7 @@ GetOptions(
         },
     } qw(port=s path=s interval=i log-file=s pid-file=s dir=s signal-on-hup=s signal-on-term=s
          backlog=i envdir=s enable-auto-restart=i daemonize auto-restart-interval=i kill-old-delay=i
-         status-file=s restart help version),
+         status-file=s restart stop help version),
 ) or exit 1;
 pod2usage(
     -exitval => 0,
@@ -35,6 +35,11 @@ if ($opts{version}) {
 
 if ($opts{restart}) {
     restart_server(%opts);
+    exit 0;
+}
+
+if ($opts{stop}) {
+    stop_server(%opts);
     exit 0;
 }
 
@@ -147,6 +152,9 @@ specifies a listen backlog parameter, whose default is SOMAXCONN (usually 128 on
 
 this is a wrapper command that reads the pid of the start_server process from --pid-file, sends SIGHUP to the process and waits until the server(s) of the older generation(s) die by monitoring the contents of the --status-file
 
+=head2 --stop
+
+this is a wrapper command that reads the pid of the start_server process from --pid-file, sends SIGTERM to the process.
 
 =head2 --help
 

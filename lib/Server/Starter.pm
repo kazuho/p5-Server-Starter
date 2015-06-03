@@ -14,7 +14,7 @@ use Server::Starter::Guard;
 use Exporter qw(import);
 
 our $VERSION = '0.28';
-our @EXPORT_OK = qw(start_server restart_server server_ports);
+our @EXPORT_OK = qw(start_server restart_server stop_server server_ports);
 
 my @signals_received;
 
@@ -428,6 +428,33 @@ sub restart_server {
     while (1) {
         my @gens = $get_generations->();
         last if scalar(@gens) == 1 && $gens[0] == $wait_for;
+        sleep 1;
+    }
+}
+
+sub stop_server {
+    my $opts = {
+        (@_ == 1 ? @$_[0] : @_),
+    };
+    die "--stop option requires --pid-file to be set as well\n"
+        unless $opts->{pid_file};
+
+    # get pid
+    my $pid = do {
+        open my $fh, '<', $opts->{pid_file}
+            or die "failed to open file:$opts->{pid_file}:$!";
+        my $line = <$fh>;
+        chomp $line;
+        $line;
+    };
+
+    # send TERM
+    kill 'TERM', $pid
+        or die "failed to send SIGTERM to the server process:$!";
+
+    # wait process
+    while (1) {
+        last if kill(0, $pid) == 0;
         sleep 1;
     }
 }
