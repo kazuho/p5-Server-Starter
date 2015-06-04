@@ -240,6 +240,7 @@ sub start_server {
         flock($fh, LOCK_EX)
             or die "flock failed($opts->{pid_file}): $!";
         print $fh "$$\n";
+        $fh->flush();
         return Server::Starter::Guard->new(
             sub {
                 unlink $opts->{pid_file}
