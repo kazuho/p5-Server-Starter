@@ -227,7 +227,6 @@ sub start_server {
         die "fork failed:$!"
             unless defined $pid;
         if ($pid != 0) {
-            print STDERR "start_server (pid:$$) spawned daemon process (pid: $pid)...\n";
             exit 0;
         }
         close STDIN;
