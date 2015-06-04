@@ -2,6 +2,12 @@ Revision history for Perl extension Server::Starter.
 
 {{$NEXT}}
 
+0.29 2015-06-04T06:45:26Z
+	- build should fail on Windows (thanks to chorny) #26
+	- add `--stop` option (thanks to tokuhirom) #28
+	- do not close STDIN in case the listening port is mapped to fd zero (thanks to tokuhirom) #29 #24
+	- reopen STDIN to suppress unnecessary warnings (thanks to touhirom) #30
+
 0.28 2015-05-28T22:08:37Z
 	- add `--port=[host:]port=fd` option for specifying the file descriptor number (thanks to tokuhirom) #24
 

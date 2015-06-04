@@ -13,10 +13,6 @@ use Module::Build;
 use File::Basename;
 use File::Spec;
 
-if (lc $^O eq "mswin32") { #https://github.com/kazuho/p5-Server-Starter/issues/25
-    die "OS unsupported\n"; #will result in NA by cpantesters
-}
-
 my %args = (
     license              => 'perl',
     dynamic_config       => 0,
