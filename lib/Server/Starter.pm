@@ -237,9 +237,9 @@ sub start_server {
         return unless $opts->{pid_file};
         open my $fh, '>', $opts->{pid_file}
             or die "failed to open file:$opts->{pid_file}: $!";
-        print $fh "$$\n";
         flock($fh, LOCK_EX)
             or die "flock failed($opts->{pid_file}): $!";
+        print $fh "$$\n";
         return Server::Starter::Guard->new(
             sub {
                 unlink $opts->{pid_file}
