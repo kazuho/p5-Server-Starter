@@ -71,9 +71,12 @@ sub start_server {
     }
     
     # create guard that removes the status file
+    my $status_file_created;
     my $status_file_guard = $opts->{status_file} && Server::Starter::Guard->new(
         sub {
-            unlink $opts->{status_file};
+            if ($status_file_created) {
+                unlink $opts->{status_file};
+            }
         },
     );
     
@@ -187,6 +190,7 @@ sub start_server {
             my $tmpfn = "$opts->{status_file}.$$";
             open my $tmpfh, '>', $tmpfn
                 or die "failed to create temporary file:$tmpfn:$!";
+            $status_file_created = 1;
             my %gen_pid = (
                 ($current_worker
                  ? ($ENV{SERVER_STARTER_GENERATION} => $current_worker)
