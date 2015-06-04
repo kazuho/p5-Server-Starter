@@ -19,7 +19,7 @@ test_tcp(
             pid_file  => $pidfile,
             daemonize => 1,
             port      => $port,
-            exec      => [ $^X, 't/11-stop-server.pl' ],
+            exec      => [ $^X, 't/12-stop-server.pl' ],
         );
         exit 0;
     },
