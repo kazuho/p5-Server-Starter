@@ -10,11 +10,12 @@ use IO::Socket::UNIX;
 use POSIX qw(:sys_wait_h);
 use Socket ();
 use Server::Starter::Guard;
+use Fcntl qw(:flock);
 
 use Exporter qw(import);
 
 our $VERSION = '0.28';
-our @EXPORT_OK = qw(start_server restart_server server_ports);
+our @EXPORT_OK = qw(start_server restart_server stop_server server_ports);
 
 my @signals_received;
 
@@ -241,11 +242,15 @@ sub start_server {
         return unless $opts->{pid_file};
         open my $fh, '>', $opts->{pid_file}
             or die "failed to open file:$opts->{pid_file}: $!";
+        flock($fh, LOCK_EX)
+            or die "flock failed($opts->{pid_file}): $!";
         print $fh "$$\n";
-        close $fh;
+        $fh->flush();
         return Server::Starter::Guard->new(
             sub {
-                unlink $opts->{pid_file};
+                unlink $opts->{pid_file}
+                    or warn "failed to unlink file:$opts->{pid_file}:$!";
+                close $fh;
             },
         );
     }->();
@@ -435,6 +440,34 @@ sub restart_server {
         last if scalar(@gens) == 1 && $gens[0] == $wait_for;
         sleep 1;
     }
+}
+
+sub stop_server {
+    my $opts = {
+        (@_ == 1 ? @$_[0] : @_),
+    };
+    die "--stop option requires --pid-file to be set as well\n"
+        unless $opts->{pid_file};
+
+    # get pid
+    open my $fh, '<', $opts->{pid_file}
+        or die "failed to open file:$opts->{pid_file}:$!";
+    my $pid = do {
+        my $line = <$fh>;
+        chomp $line;
+        $line;
+    };
+
+    print STDERR "stop_server (pid:$$) stopping now (pid:$pid)...\n";
+
+    # send TERM
+    kill 'TERM', $pid
+        or die "failed to send SIGTERM to the server process:$!";
+
+    # wait process
+    flock($fh, LOCK_EX)
+        or die "flock failed($opts->{pid_file}): $!";
+    close $fh;
 }
 
 sub server_ports {
