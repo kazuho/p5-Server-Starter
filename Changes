@@ -2,6 +2,10 @@ Revision history for Perl extension Server::Starter.
 
 {{$NEXT}}
 
+0.30 2015-06-05T05:28:43Z
+	- unlink the status file only when created by itself (thanks to tokuhirom) #32
+	- redo #26 (thanks to tokuhirom) #31
+
 0.29 2015-06-04T06:45:26Z
 	- build should fail on Windows (thanks to chorny) #26
 	- add `--stop` option (thanks to tokuhirom) #28
