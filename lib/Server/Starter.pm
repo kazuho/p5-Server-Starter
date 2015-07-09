@@ -271,7 +271,7 @@ sub start_server {
                 my @args = @{$opts->{exec}};
                 # child process
                 if (defined $opts->{dir}) {
-                    chdir $opts->{dir} or die "failed to chdir:$!";
+                    chdir $opts->{dir} or die "failed to chdir:$opts->{dir}:$!";
                 }
                 { exec { $args[0] } @args };
                 print STDERR "failed to exec $args[0]$!";
