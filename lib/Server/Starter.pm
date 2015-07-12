@@ -150,12 +150,6 @@ sub start_server {
         }
         push @sock, $sock;
     }
-    my $path_remove_guard = Server::Starter::Guard->new(
-        sub {
-            -S $_ and unlink $_
-                for @$paths;
-        },
-    );
     for my $path (@$paths) {
         if (-S $path) {
             warn "removing existing socket file:$path";
@@ -240,6 +234,13 @@ sub start_server {
                 or die "reopen failed: $!";
         }
     }
+
+    my $path_remove_guard = Server::Starter::Guard->new(
+        sub {
+            -S $_ and unlink $_
+                for @$paths;
+        },
+    );
 
     # open pid file
     my $pid_file_guard = sub {
