@@ -5,12 +5,17 @@ use warnings;
 
 sub new {
     my ($klass, $handler) = @_;
-    return bless [ $handler ], $klass;
+    return bless {
+       handler => $handler,
+       active  => 1,
+   }, $klass;
 }
+
+sub dismiss { shift->{active} = 0 }
 
 sub DESTROY {
     my $self = shift;
-    $self->[0]->();
+    $self->{active} && $self->{handler}->();
 }
 
 1;

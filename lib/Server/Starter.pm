@@ -150,6 +150,12 @@ sub start_server {
         }
         push @sock, $sock;
     }
+    my $path_remove_guard = Server::Starter::Guard->new(
+        sub {
+            -S $_ and unlink $_
+                for @$paths;
+        },
+    );
     for my $path (@$paths) {
         if (-S $path) {
             warn "removing existing socket file:$path";
@@ -217,6 +223,7 @@ sub start_server {
         die "fork failed:$!"
             unless defined $pid;
         if ($pid != 0) {
+            $path_remove_guard->dismiss;
             exit 0;
         }
         # in child process
@@ -225,6 +232,7 @@ sub start_server {
         die "fork failed:$!"
             unless defined $pid;
         if ($pid != 0) {
+            $path_remove_guard->dismiss;
             exit 0;
         }
         # do not close STDIN if `--port=n=0`.
@@ -234,13 +242,6 @@ sub start_server {
                 or die "reopen failed: $!";
         }
     }
-
-    my $path_remove_guard = Server::Starter::Guard->new(
-        sub {
-            -S $_ and unlink $_
-                for @$paths;
-        },
-    );
 
     # open pid file
     my $pid_file_guard = sub {
