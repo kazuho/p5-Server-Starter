@@ -14,7 +14,7 @@ use Fcntl qw(:flock);
 
 use Exporter qw(import);
 
-our $VERSION = '0.30';
+our $VERSION = '0.31';
 our @EXPORT_OK = qw(start_server restart_server stop_server server_ports);
 
 my @signals_received;

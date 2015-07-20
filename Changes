@@ -2,6 +2,10 @@ Revision history for Perl extension Server::Starter.
 
 {{$NEXT}}
 
+0.31 2015-07-20T02:38:57Z
+	- do not remove the socket file when becoming a daemon (thanks to andyjones) #34 #36
+	- emit name of the directory to which it failed to chdir(2) (thanks to tokuhirom) #33
+
 0.30 2015-06-05T05:28:43Z
 	- unlink the status file only when created by itself (thanks to tokuhirom) #32
 	- redo #26 (thanks to tokuhirom) #31
