@@ -223,6 +223,7 @@ sub start_server {
         die "fork failed:$!"
             unless defined $pid;
         if ($pid != 0) {
+            $path_remove_guard->dismiss;
             exit 0;
         }
         # in child process
@@ -231,6 +232,7 @@ sub start_server {
         die "fork failed:$!"
             unless defined $pid;
         if ($pid != 0) {
+            $path_remove_guard->dismiss;
             exit 0;
         }
         # do not close STDIN if `--port=n=0`.
