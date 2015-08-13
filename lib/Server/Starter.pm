@@ -569,8 +569,13 @@ To gracefully restart the server program, send SIGHUP to the superdaemon.  The s
 
 By using L<Server::Starter> it is much easier to write a hot-deployable server.  Following are the only requirements a server program to be run under L<Server::Starter> should conform to:
 
-- receive file descriptors to listen to through an environment variable
-- perform a graceful shutdown when receiving SIGTERM
+=over 4
+
+=item * receive file descriptors to listen to through an environment variable
+
+=item * perform a graceful shutdown when receiving SIGTERM
+
+=back
 
 A Net::Server personality that can be run under L<Server::Starter> exists under the name L<Net::Server::SS::PreFork>.
 
