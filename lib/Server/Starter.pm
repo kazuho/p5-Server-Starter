@@ -456,7 +456,7 @@ sub stop_server {
         unless $opts->{pid_file};
 
     # get pid
-    open my $fh, '<', $opts->{pid_file}
+    open my $fh, '+<', $opts->{pid_file}
         or die "failed to open file:$opts->{pid_file}:$!";
     my $pid = do {
         my $line = <$fh>;
