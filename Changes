@@ -2,6 +2,9 @@ Revision history for Perl extension Server::Starter.
 
 {{$NEXT}}
 
+0.32 2015-08-25T02:09:18Z
+	- fix compatibility issue on Solaris (thanks to Syohei YOSHIDA) #40
+
 0.31 2015-07-20T02:38:57Z
 	- do not remove the socket file when becoming a daemon (thanks to andyjones) #34 #36
 	- emit name of the directory to which it failed to chdir(2) (thanks to tokuhirom) #33
