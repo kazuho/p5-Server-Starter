@@ -24,7 +24,7 @@ Server::Starter - a superdaemon for hot-deploying server programs
 
 # DESCRIPTION
 
-It is often a pain to write a server program that supports graceful restarts, with no resource leaks.  [Server::Starter](https://metacpan.org/pod/Server::Starter) solves the problem by splitting the task into two.  One is [start\_server](https://metacpan.org/pod/start_server), a script provided as a part of the module, which works as a superdaemon that binds to zero or more TCP ports or unix sockets, and repeatedly spawns the server program that actually handles the necessary tasks (for example, responding to incoming commenctions).  The spawned server programs under [Server::Starter](https://metacpan.org/pod/Server::Starter) call accept(2) and handle the requests.
+It is often a pain to write a server program that supports graceful restarts, with no resource leaks.  [Server::Starter](https://metacpan.org/pod/Server::Starter) solves the problem by splitting the task into two.  One is [start\_server](https://metacpan.org/pod/start_server), a script provided as a part of the module, which works as a superdaemon that binds to zero or more TCP ports or unix sockets, and repeatedly spawns the server program that actually handles the necessary tasks (for example, responding to incoming connections).  The spawned server programs under [Server::Starter](https://metacpan.org/pod/Server::Starter) call accept(2) and handle the requests.
 
 To gracefully restart the server program, send SIGHUP to the superdaemon.  The superdaemon spawns a new server program, and if (and only if) it starts up successfully, sends SIGTERM to the old server program.
 
