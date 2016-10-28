@@ -389,7 +389,9 @@ sub start_server {
             my $kill_old_delay = defined $ENV{KILL_OLD_DELAY} ? $ENV{KILL_OLD_DELAY} : $ENV{ENABLE_AUTO_RESTART} ? 5 : 0;
             if ($kill_old_delay != 0) {
                 print STDERR "sleeping $kill_old_delay secs before killing old workers\n";
-                sleep $kill_old_delay;
+                while ($kill_old_delay > 0) {
+                    $kill_old_delay -= sleep $kill_old_delay || 1;
+                }
             }
             print STDERR "killing old workers\n";
             kill $opts->{signal_on_hup}, $_
