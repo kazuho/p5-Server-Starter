@@ -390,7 +390,7 @@ sub start_server {
             if ($kill_old_delay != 0) {
                 print STDERR "sleeping $kill_old_delay secs before killing old workers\n";
                 while ($kill_old_delay > 0) {
-                    $kill_old_delay -= sleep $kill_old_delay;
+                    $kill_old_delay -= sleep $kill_old_delay || 1;
                 }
             }
             print STDERR "killing old workers\n";
