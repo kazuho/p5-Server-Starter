@@ -4,7 +4,7 @@
       "Kazuho Oku"
    ],
    "dynamic_config" : 0,
-   "generated_by" : "Minilla/v2.3.0, CPAN::Meta::Converter version 2.150001",
+   "generated_by" : "Minilla/v3.0.6, CPAN::Meta::Converter version 2.150005",
    "license" : [
       "perl_5"
    ],
@@ -28,7 +28,7 @@
    "prereqs" : {
       "configure" : {
          "requires" : {
-            "Module::Build" : "0.38"
+            "Module::Build" : "0.4005"
          }
       },
       "develop" : {
@@ -67,7 +67,7 @@
          "web" : "https://github.com/kazuho/p5-Server-Starter"
       }
    },
-   "version" : "0.32",
+   "version" : "0.33",
    "x_contributors" : [
       "kazuho <kazuho@d0d07461-0603-4401-acd4-de1884942a52>",
       "yappo <yappo@d0d07461-0603-4401-acd4-de1884942a52>",
@@ -86,6 +86,10 @@
       "Andy Jones <andy@broadbean.com>",
       "Arthur Axel 'fREW' Schmidt <frioux@gmail.com>",
       "Syohei YOSHIDA <syohex@gmail.com>",
+      "Slaven Rezic <slaven.rezic@idealo.de>",
+      "Mikhail Ivanov <m.ivanych@gmail.com>",
+      "Xuanzhong Wei <azrlew@gmail.com>",
       "Kazuho Oku <kazuhooku@gmail.com>"
-   ]
+   ],
+   "x_serialization_backend" : "JSON::PP version 2.27300"
 }
