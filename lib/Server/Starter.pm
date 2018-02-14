@@ -37,8 +37,6 @@ sub start_server {
     # prepare args
     my $ports = $opts->{port};
     my $paths = $opts->{path};
-    croak "either of ``port'' or ``path'' option is mandatory\n"
-        unless $ports || $paths;
     $ports = [ $ports ]
         if ! ref $ports && defined $ports;
     $paths = [ $paths ]
@@ -480,7 +478,7 @@ sub stop_server {
 
 sub server_ports {
     die "no environment variable SERVER_STARTER_PORT. Did you start the process using server_starter?",
-        unless $ENV{SERVER_STARTER_PORT};
+        unless defined $ENV{SERVER_STARTER_PORT};
     my %ports = map {
         +(split /=/, $_, 2)
     } split /;/, $ENV{SERVER_STARTER_PORT};
