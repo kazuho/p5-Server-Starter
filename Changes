@@ -2,10 +2,13 @@ Revision history for Perl extension Server::Starter.
 
 {{$NEXT}}
 
+0.34 2018-02-26T06:32:16Z
+	- run start_server even if no port (or path) is specified (thanks to Ichito Nagata) #49
+	- add `.` in @INC (thanks to Petr Písař) #47
+
 0.33 2016-12-13T00:37:49Z
 	- do not kill old worker too early (thanks to Xuanzhong Wei) #45
 	- allow use of `--enable-auto-restart` without an argument (thanks to Slaven Rezic) #41
-
 
 0.32 2015-08-25T02:09:18Z
 	- fix compatibility issue on Solaris (thanks to Syohei YOSHIDA) #40

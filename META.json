@@ -4,7 +4,7 @@
       "Kazuho Oku"
    ],
    "dynamic_config" : 0,
-   "generated_by" : "Minilla/v3.0.6, CPAN::Meta::Converter version 2.150005",
+   "generated_by" : "Minilla/v3.0.16, CPAN::Meta::Converter version 2.150005",
    "license" : [
       "perl_5"
    ],
@@ -67,29 +67,31 @@
          "web" : "https://github.com/kazuho/p5-Server-Starter"
       }
    },
-   "version" : "0.33",
+   "version" : "0.34",
    "x_contributors" : [
-      "kazuho <kazuho@d0d07461-0603-4401-acd4-de1884942a52>",
-      "yappo <yappo@d0d07461-0603-4401-acd4-de1884942a52>",
-      "Robert Buels <rmb32@cornell.edu>",
-      "chromatic <chromatic@wgz.org>",
-      "Chia-liang Kao <clkao@clkao.org>",
-      "Masahiro Nagano <kazeburo@gmail.com>",
-      "Tomoya Kabe <kabe.tomoya@O-02586-MAC.local>",
-      "Haruka Iwao <haruka@fout.jp>",
-      "Kazuho Oku <kazuho@natadeco.co>",
-      "Karen Etheridge <ether@cpan.org>",
-      "Bugdebugger <bugdebugger@users.noreply.github.com>",
-      "Tatsuhiko Miyagawa <miyagawa@bulknews.net>",
       "Alexandr Ciornii <alexchorny@gmail.com>",
-      "Tokuhiro Matsuno <tokuhirom@gmail.com>",
       "Andy Jones <andy@broadbean.com>",
       "Arthur Axel 'fREW' Schmidt <frioux@gmail.com>",
-      "Syohei YOSHIDA <syohex@gmail.com>",
-      "Slaven Rezic <slaven.rezic@idealo.de>",
+      "Bugdebugger <bugdebugger@users.noreply.github.com>",
+      "Chia-liang Kao <clkao@clkao.org>",
+      "Haruka Iwao <haruka@fout.jp>",
+      "Ichito Nagata <i.nagata110@gmail.com>",
+      "Karen Etheridge <ether@cpan.org>",
+      "Kazuho Oku <kazuho@natadeco.co>",
+      "Kazuho Oku <kazuhooku@gmail.com>",
+      "Masahiro Nagano <kazeburo@gmail.com>",
       "Mikhail Ivanov <m.ivanych@gmail.com>",
+      "Petr Písař <ppisar@redhat.com>",
+      "Robert Buels <rmb32@cornell.edu>",
+      "Slaven Rezic <slaven.rezic@idealo.de>",
+      "Syohei YOSHIDA <syohex@gmail.com>",
+      "Tatsuhiko Miyagawa <miyagawa@bulknews.net>",
+      "Tokuhiro Matsuno <tokuhirom@gmail.com>",
+      "Tomoya Kabe <kabe.tomoya@O-02586-MAC.local>",
       "Xuanzhong Wei <azrlew@gmail.com>",
-      "Kazuho Oku <kazuhooku@gmail.com>"
+      "chromatic <chromatic@wgz.org>",
+      "kazuho <kazuho@d0d07461-0603-4401-acd4-de1884942a52>",
+      "yappo <yappo@d0d07461-0603-4401-acd4-de1884942a52>"
    ],
    "x_serialization_backend" : "JSON::PP version 2.27300"
 }
