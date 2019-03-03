@@ -115,8 +115,8 @@ if set, writes the status of the server process(es) to the file
 
 =head2 --envdir=ENVDIR
 
-directory that contains environment variables to the server processes.
-It is intended for use with C<envdir> in C<daemontools>.
+directory that contains environment variables to the server processes and superdaemon.
+It is inspired by C<envdir> in C<daemontools>.
 This can be overwritten by environment variable C<ENVDIR>.
 
 =head2 --log-file=file
