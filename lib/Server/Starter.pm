@@ -54,6 +54,10 @@ sub start_server {
     $ENV{AUTO_RESTART_INTERVAL} = $opts->{auto_restart_interval}
         if defined $opts->{auto_restart_interval};
 
+    my %loaded_env = _load_env();
+    my @loaded_env_keys = keys %loaded_env;
+    local @ENV{@loaded_env_keys} = map { $loaded_env{$_} } (@loaded_env_keys);
+
     # open log file
     my $logfh;
     if ($opts->{log_file}) {
@@ -332,7 +336,7 @@ sub start_server {
         # wait for next signal (or when auto-restart becomes necessary)
         my @r = $wait->();
         # reload env if necessary
-        my %loaded_env = _reload_env();
+        my %loaded_env = _load_env();
         my @loaded_env_keys = keys %loaded_env;
         local @ENV{@loaded_env_keys} = map { $loaded_env{$_} } (@loaded_env_keys);
         $ENV{AUTO_RESTART_INTERVAL} ||= 360
@@ -485,7 +489,7 @@ sub server_ports {
     \%ports;
 }
 
-sub _reload_env {
+sub _load_env {
     my $dn = $ENV{ENVDIR};
     return if !defined $dn or !-d $dn;
     my $d;

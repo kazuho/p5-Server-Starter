@@ -50,9 +50,9 @@ test_tcp(
             kill "HUP", $server_pid;
             sleep 2;
         };
-        # Initial worker does not read envdir
+        # Initial worker does read envdir
         my $buf = $fetch_env->();
-        ok($buf !~ qr/^FOO=foo-value1$/m, 'changed env');
+        ok($buf =~ qr/^FOO=foo-value1$/m, 'changed env');
         # rewrite envdir
         open my $envfh, ">", "$tempdir/env/FOO" or die $!;
         print $envfh "foo-value2";
