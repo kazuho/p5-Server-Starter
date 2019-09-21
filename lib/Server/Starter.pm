@@ -100,10 +100,10 @@ sub start_server {
             $domain = Socket::PF_INET;
             $sa = pack_sockaddr_in $hostport, Socket::inet_aton("0.0.0.0");
         } elsif ($hostport =~ /^\s*(?:\[\s*|)([^\]]*)\s*(?:\]\s*|):\s*(u?)(\d+)(?:\s*=(\d+))?\s*$/) {
-            my ($host, $port) = ($2, $3);
+            my ($host, $port) = ($1, $3);
             $fd = $4;
             $socktype = Socket::SOCK_DGRAM()
-                if $1;
+                if $2;
             if ($host =~ /:/) {
                 # IPv6
                 local $@;
