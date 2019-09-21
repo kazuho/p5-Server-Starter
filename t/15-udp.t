@@ -33,5 +33,7 @@ if ($pid == 0) {
         last if $line =~ /^success/m;
     }
     pass "server up";
+    kill 'TERM', $pid;
+    while ($pid != wait) {}
 }
 
