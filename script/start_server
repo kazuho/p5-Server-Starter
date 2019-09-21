@@ -85,6 +85,8 @@ Square brackets should be used to specify an IPv6 address (e.g. --port=[::1]:808
 
 If fd is specified, then start_server allocates the socket at the given number.
 
+The command binds to UDP ports if the port numbers are prefixed by "u" (e.g., --port=u443).
+
 =head2 --path=path
 
 path at where to listen using unix socket (optional)
