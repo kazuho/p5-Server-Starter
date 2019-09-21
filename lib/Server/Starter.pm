@@ -89,17 +89,21 @@ sub start_server {
     my @sockenv;
     for my $hostport (@$ports) {
         my ($domain, $sa);
+        my $socktype = Socket::SOCK_STREAM();
         my $fd;
         my $sockopts = sub {};
-        if ($hostport =~ /^\s*(\d+)(?:\s*=(\d+))?\s*$/) {
+        if ($hostport =~ /^\s*(u?)(\d+)(?:\s*=(\d+))?\s*$/) {
             # by default, only bind to IPv4 (for compatibility)
-            $hostport = $1;
-            $fd = $2;
+            ($hostport, $fd) = ($2, $3);
+            $socktype = Socket::SOCK_DGRAM()
+                if $1;
             $domain = Socket::PF_INET;
-            $sa = pack_sockaddr_in $1, Socket::inet_aton("0.0.0.0");
-        } elsif ($hostport =~ /^\s*(?:\[\s*|)([^\]]*)\s*(?:\]\s*|):\s*(\d+)(?:\s*=(\d+))?\s*$/) {
-            my ($host, $port) = ($1, $2);
-            $fd = $3;
+            $sa = pack_sockaddr_in $hostport, Socket::inet_aton("0.0.0.0");
+        } elsif ($hostport =~ /^\s*(?:\[\s*|)([^\]]*)\s*(?:\]\s*|):\s*(u?)(\d+)(?:\s*=(\d+))?\s*$/) {
+            my ($host, $port) = ($2, $3);
+            $fd = $4;
+            $socktype = Socket::SOCK_DGRAM()
+                if $1;
             if ($host =~ /:/) {
                 # IPv6
                 local $@;
@@ -131,14 +135,16 @@ sub start_server {
         } else {
             croak "invalid ``port'' value:$hostport\n"
         }
-        socket my $sock, $domain, Socket::SOCK_STREAM(), 0
+        socket my $sock, $domain, $socktype, 0
             or die "failed to create socket:$!";
         setsockopt $sock, Socket::SOL_SOCKET, Socket::SO_REUSEADDR(), pack("l", 1);
         $sockopts->($sock);
         bind $sock, $sa
             or die "failed to bind to $hostport:$!";
-        listen $sock, $opts->{backlog}
-            or die "listen(2) failed:$!";
+        if ($socktype != Socket::SOCK_DGRAM()) {
+            listen $sock, $opts->{backlog}
+                or die "listen(2) failed:$!";
+        }
         fcntl($sock, F_SETFD, my $flags = '')
                 or die "fcntl(F_SETFD, 0) failed:$!";
         if (defined $fd) {
