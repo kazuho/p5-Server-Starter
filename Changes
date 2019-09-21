@@ -2,6 +2,9 @@ Revision history for Perl extension Server::Starter.
 
 {{$NEXT}}
 
+0.35 2019-09-21T13:50:02Z
+	- add support for UDP #52
+
 0.34 2018-02-26T06:32:16Z
 	- run start_server even if no port (or path) is specified (thanks to Ichito Nagata) #49
 	- add `.` in @INC (thanks to Petr Písař) #47
