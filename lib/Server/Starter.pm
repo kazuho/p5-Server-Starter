@@ -145,7 +145,7 @@ sub start_server {
             listen $sock, $opts->{backlog}
                 or die "listen(2) failed:$!";
         }
-        fcntl($sock, F_SETFD, my $flags = '')
+        fcntl($sock, F_SETFD, 0)
                 or die "fcntl(F_SETFD, 0) failed:$!";
         if (defined $fd) {
             POSIX::dup2($sock->fileno, $fd)
@@ -177,7 +177,7 @@ sub start_server {
             Local  => $path,
         ) or die "failed to listen to file $path:$!";
         umask($saved_umask);
-        fcntl($sock, F_SETFD, my $flags = '')
+        fcntl($sock, F_SETFD, 0)
             or die "fcntl(F_SETFD, 0) failed:$!";
         push @sockenv, "$path=" . $sock->fileno;
         push @sock, $sock;
