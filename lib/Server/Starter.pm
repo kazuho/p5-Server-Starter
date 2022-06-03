@@ -328,7 +328,7 @@ sub start_server {
         while (%old_workers) {
             if (my @r = _wait3(1)) {
                 my ($died_worker, $status) = @r;
-                print STDERR "worker $died_worker died, status:$status\n";
+                print STDERR "worker $died_worker stopped, status:$status\n";
                 delete $old_workers{$died_worker};
                 $update_status->();
             }
@@ -351,10 +351,10 @@ sub start_server {
         if (@r) {
             my ($died_worker, $status) = @r;
             if ($died_worker == $current_worker) {
-                print STDERR "worker $died_worker died unexpectedly with status:$status, restarting\n";
+                print STDERR "worker $died_worker stopped unexpectedly with status:$status, restarting\n";
                 $start_worker->();
             } else {
-                print STDERR "old worker $died_worker died, status:$status\n";
+                print STDERR "old worker $died_worker stopped, status:$status\n";
                 delete $old_workers{$died_worker};
                 $update_status->();
             }
@@ -396,12 +396,12 @@ sub start_server {
             }
             my $kill_old_delay = defined $ENV{KILL_OLD_DELAY} ? $ENV{KILL_OLD_DELAY} : $ENV{ENABLE_AUTO_RESTART} ? 5 : 0;
             if ($kill_old_delay != 0) {
-                print STDERR "sleeping $kill_old_delay secs before killing old workers\n";
+                print STDERR "sleeping $kill_old_delay secs before stopping old workers\n";
                 while ($kill_old_delay > 0) {
                     $kill_old_delay -= sleep $kill_old_delay || 1;
                 }
             }
-            print STDERR "killing old workers\n";
+            print STDERR "stopping old workers\n";
             kill $opts->{signal_on_hup}, $_
                 for sort keys %old_workers;
         }

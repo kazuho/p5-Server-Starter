@@ -19,7 +19,7 @@ if ($pid == 0) {
     sleep 1;
     kill 'USR1', getppid;
     sleep 10;
-    die "child process not killed";
+    die "child process running";
 }
 
 my @r = Server::Starter::_wait3(0);
@@ -28,12 +28,12 @@ ok ! @r, "nonblocking wait returns without pid";
 for (my $i = 1; $i <= 2; ++$i) {
     @r = Server::Starter::_wait3(1);
     is $gotsig, $i, "woke up after signal (count: $i)";
-    ok ! @r, "child is alive";
+    ok ! @r, "child is running";
 }
 
 kill 'KILL', $pid;
 @r = Server::Starter::_wait3(1);
 is $gotsig, 2, "did not receive signal";
-is $r[0], $pid, "child died";
+is $r[0], $pid, "child stopped";
 
 done_testing;
