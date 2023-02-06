@@ -92,6 +92,7 @@ sub start_server {
         my $socktype = Socket::SOCK_STREAM();
         my $fd;
         my $sockopts = sub {};
+        my $ssl = $hostport =~ s/:ssl\b//;
         if ($hostport =~ /^\s*(u?)(\d+)(?:\s*=(\d+))?\s*$/) {
             # by default, only bind to IPv4 (for compatibility)
             ($hostport, $fd) = ($2, $3);
@@ -154,6 +155,9 @@ sub start_server {
             close $sock;
             push @sockenv, "$hostport=$fd";
         } else {
+            if ($ssl) {
+                $hostport = "$hostport:ssl";
+            }
             push @sockenv, "$hostport=" . $sock->fileno;
         }
         push @sock, $sock;
